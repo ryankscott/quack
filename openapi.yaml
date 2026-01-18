@@ -1,0 +1,738 @@
+openapi: 3.1.0
+title: Quack API
+info:
+  version: 0.1.0
+  title: Quack API
+  description: Local-first DuckDB-backed API for file ingestion and SQL execution.
+servers:
+  - url: http://localhost:3001
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /files/upload:
+    post:
+      summary: Upload a file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        '200':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /files:
+    get:
+      summary: List uploaded files
+      responses:
+        '200':
+          description: Array of files
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileListResponse'
+  /tables:
+    post:
+      summary: Create table from uploaded file
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTableRequest'
+      responses:
+        '200':
+          description: Table created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTableResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List tables
+      responses:
+        '200':
+          description: Array of tables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableListResponse'
+  /tables/{tableName}/preview:
+    get:
+      summary: Preview table data
+      parameters:
+        - name: tableName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+      responses:
+        '200':
+          description: Preview data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TablePreview'
+        '400':
+          description: Invalid table name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /query/execute:
+    post:
+      summary: Execute SQL query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryExecuteRequest'
+      responses:
+        '200':
+          description: Query executed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/QueryResult'
+        '400':
+          description: Syntax error or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '408':
+          description: Query timeout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /queries:
+    post:
+      summary: Create saved query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQueryRequest'
+      responses:
+        '200':
+          description: Query created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedQuery'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List saved queries
+      responses:
+        '200':
+          description: Array of saved queries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SavedQuery'
+  /queries/{id}:
+    get:
+      summary: Get saved query by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Query details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedQuery'
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update saved query
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueryRequest'
+      responses:
+        '200':
+          description: Query updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedQuery'
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete saved query
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Query deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /documents:
+    post:
+      summary: Create document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '200':
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List documents
+      responses:
+        '200':
+          description: Array of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+  /documents/{id}:
+    get:
+      summary: Get document by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentWithCells'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDocumentRequest'
+      responses:
+        '200':
+          description: Document updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentWithCells'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /documents/{id}/export:
+    post:
+      summary: Export document to portable .quackdb file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '200':
+          description: Export successful
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid input or dataMode
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /documents/import:
+    post:
+      summary: Import document from .quackdb file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        '200':
+          description: Import successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentWithCells'
+        '400':
+          description: Invalid file or format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+    FileMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        path:
+          type: string
+        uploaded_at:
+          type: string
+          format: date-time
+    FileUploadResponse:
+      type: object
+      properties:
+        file_id:
+          type: string
+      required:
+        - file_id
+    FileListResponse:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileMetadata'
+    CreateTableRequest:
+      type: object
+      properties:
+        file_id:
+          type: string
+        table_name:
+          type: string
+      required:
+        - file_id
+        - table_name
+    CreateTableResponse:
+      type: object
+      properties:
+        table_id:
+          type: string
+        table_name:
+          type: string
+      required:
+        - table_id
+        - table_name
+    TableMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        source_file_id:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    TableListResponse:
+      type: object
+      properties:
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableMetadata'
+    TablePreview:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        row_count:
+          type: integer
+      required:
+        - columns
+        - rows
+        - row_count
+    QueryExecuteRequest:
+      type: object
+      properties:
+        sql:
+          type: string
+        limit:
+          type: integer
+          default: 1000
+          maximum: 10000
+      required:
+        - sql
+    QueryResultColumn:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+    QueryResult:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryResultColumn'
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        truncated:
+          type: boolean
+        rowCount:
+          type: integer
+      required:
+        - columns
+        - rows
+        - truncated
+        - rowCount
+    SavedQuery:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        sql:
+          type: string
+        referencedTables:
+          type: array
+          items:
+            type: string
+          description: List of table names referenced in the SQL query
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Warning messages (e.g., referenced tables that don't exist)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - sql
+        - referencedTables
+        - created_at
+        - updated_at
+    CreateQueryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        sql:
+          type: string
+      required:
+        - name
+        - sql
+    UpdateQueryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        sql:
+          type: string
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        markdown:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+    DocumentCell:
+      type: object
+      properties:
+        id:
+          type: string
+        document_id:
+          type: string
+        cell_index:
+          type: integer
+        cell_type:
+          type: string
+          enum: [sql, markdown]
+        sql_text:
+          type: string
+          nullable: true
+        markdown_text:
+          type: string
+          nullable: true
+        chart_config:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - document_id
+        - cell_index
+        - cell_type
+        - created_at
+    DocumentWithCells:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        markdown:
+          type: string
+          nullable: true
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentCell'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - cells
+        - created_at
+        - updated_at
+    CreateDocumentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        markdown:
+          type: string
+      required:
+        - name
+    UpdateDocumentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        markdown:
+          type: string
+    ExportRequest:
+      type: object
+      properties:
+        dataMode:
+          type: string
+          enum: [none, query-results, referenced-tables, full-db]
+          default: query-results
+      required:
+        - dataMode
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
