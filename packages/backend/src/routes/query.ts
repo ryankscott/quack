@@ -39,7 +39,7 @@ export async function queryRoutes(fastify: FastifyInstance): Promise<void> {
       const { sql, limit } = request.body || {};
 
       if (!sql || typeof sql !== 'string' || !sql.trim()) {
-        return reply.status(400).send({ error: 'SQL is required' });
+        return reply.status(400).type('application/json').send({ error: 'SQL is required' });
       }
 
       const sanitizedSql = sanitizeSql(sql);
@@ -68,22 +68,25 @@ export async function queryRoutes(fastify: FastifyInstance): Promise<void> {
         };
 
         const result = await withTimeout(execution(), effectiveTimeout);
-        return { result };
+        return reply.type('application/json').send({ result });
       } catch (error) {
         fastify.log.error(error);
 
         if (error instanceof QueryTimeoutError) {
-          return reply.status(408).send({ error: error.message });
+          return reply.status(408).type('application/json').send({ error: error.message });
         }
 
         const message = (error as Error)?.message ?? 'Unknown error';
         const isSyntaxError = /syntax error|parser error/i.test(message);
 
         if (isSyntaxError) {
-          return reply.status(400).send({ error: message });
+          return reply.status(400).type('application/json').send({ error: message });
         }
 
-        return reply.status(500).send({ error: 'Failed to execute query' });
+        return reply
+          .status(500)
+          .type('application/json')
+          .send({ error: 'Failed to execute query' });
       }
     }
   );

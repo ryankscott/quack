@@ -21,12 +21,16 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
 
     // Validate inputs
     if (!file_id || !table_name) {
-      return reply.status(400).send({ error: 'file_id and table_name are required' });
+      return reply
+        .status(400)
+        .type('application/json')
+        .send({ error: 'file_id and table_name are required' });
     }
 
     if (!validateTableName(table_name)) {
       return reply
         .status(400)
+        .type('application/json')
         .send({ error: 'Invalid table name. Use alphanumeric and underscore only.' });
     }
 
@@ -38,7 +42,7 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
       );
 
       if (fileResult.length === 0) {
-        return reply.status(404).send({ error: 'File not found' });
+        return reply.status(404).type('application/json').send({ error: 'File not found' });
       }
 
       const filePath = fileResult[0]!.path;
@@ -58,11 +62,12 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
         file_id
       );
 
-      return { table_id: tableId, table_name };
+      return reply.type('application/json').send({ table_id: tableId, table_name });
     } catch (error) {
       fastify.log.error(error);
       return reply
         .status(500)
+        .type('application/json')
         .send({ error: `Failed to create table: ${(error as Error).message}` });
     }
   });
@@ -75,11 +80,12 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
         FROM _tables t
         ORDER BY t.created_at DESC
       `);
-      return { tables };
+      return reply.type('application/json').send({ tables });
     } catch (error) {
       fastify.log.error(error);
       return reply
         .status(500)
+        .type('application/json')
         .send({ error: 'Failed to retrieve tables' } as unknown as { tables: TableMetadata[] });
     }
   });
@@ -93,7 +99,7 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
 
       // Validate table name to prevent SQL injection
       if (!validateTableName(tableName)) {
-        return reply.status(400).send({ error: 'Invalid table name' });
+        return reply.status(400).type('application/json').send({ error: 'Invalid table name' });
       }
 
       try {
@@ -106,7 +112,7 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
         );
 
         if (rows.length === 0) {
-          return { columns: [], rows: [], row_count: 0 };
+          return reply.type('application/json').send({ columns: [], rows: [], row_count: 0 });
         }
 
         // Extract column information from first row
@@ -125,11 +131,14 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
         `);
         const rowCount = Number(countResult[0]?.count || 0);
 
-        return { columns, rows: rowsArray, row_count: rowCount };
+        return reply
+          .type('application/json')
+          .send({ columns, rows: rowsArray, row_count: rowCount });
       } catch (error) {
         fastify.log.error(error);
         return reply
           .status(500)
+          .type('application/json')
           .send({ error: `Failed to preview table: ${(error as Error).message}` });
       }
     }

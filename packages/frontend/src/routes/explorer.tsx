@@ -12,14 +12,14 @@ export function ExplorerPage() {
       {/* Left Sidebar */}
       <div className="w-80 border-r border-quack-dark border-opacity-10 flex flex-col overflow-hidden bg-white">
         <FileUpload />
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-h-0 overflow-auto">
           <FileList onTableCreated={setSelectedTable} />
           <TableList selectedTable={selectedTable} onSelectTable={setSelectedTable} />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden bg-quack-gold_bg">
+      <div className="flex-1 min-w-0 overflow-hidden bg-quack-gold_bg">
         <TablePreview tableName={selectedTable} />
       </div>
     </div>

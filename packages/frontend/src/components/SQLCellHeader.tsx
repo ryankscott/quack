@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface SQLCellHeaderProps {
@@ -6,9 +6,14 @@ interface SQLCellHeaderProps {
   totalCells: number;
   isExecuting: boolean;
   isDirty: boolean;
+  isEditorCollapsed?: boolean;
+  isPreviewCollapsed?: boolean;
+  hasResults?: boolean;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onRemove: () => void;
+  onToggleEditor?: () => void;
+  onTogglePreview?: () => void;
 }
 
 /**
@@ -19,9 +24,14 @@ export function SQLCellHeader({
   totalCells,
   isExecuting,
   isDirty,
+  isEditorCollapsed,
+  isPreviewCollapsed,
+  hasResults,
   onMoveUp,
   onMoveDown,
   onRemove,
+  onToggleEditor,
+  onTogglePreview,
 }: SQLCellHeaderProps) {
   return (
     <div className="border-b border-quack-dark border-opacity-10 bg-quack-gold bg-opacity-5 px-4 py-2 flex items-center justify-between">
@@ -31,6 +41,30 @@ export function SQLCellHeader({
         </span>
         {isExecuting && <span className="text-xs text-quack-orange">Executing...</span>}
         {isDirty && <span className="text-xs text-quack-gold">• Unsaved</span>}
+
+        {/* Collapse toggle buttons */}
+        <div className="flex items-center gap-0.5 ml-2 border-l border-quack-dark border-opacity-10 pl-2">
+          <Button
+            onClick={onToggleEditor}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            title={isEditorCollapsed ? 'Show editor' : 'Hide editor'}
+          >
+            {isEditorCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          </Button>
+          {hasResults && (
+            <Button
+              onClick={onTogglePreview}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              title={isPreviewCollapsed ? 'Show results' : 'Hide results'}
+            >
+              {isPreviewCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            </Button>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-1">
         {totalCells > 1 && (

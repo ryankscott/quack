@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import type { CellState } from '@/hooks/useCellManager';
 import { Button } from './ui/button';
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronRight, Trash2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent } from './ui/collapsible';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -24,19 +24,37 @@ export function MarkdownCell({
   onMoveUp,
   onMoveDown,
 }: MarkdownCellProps) {
-  const [showPreview, setShowPreview] = useState(true);
+  const hasPreview = !!cell.markdown?.trim();
 
   return (
     <div className="bg-white border border-quack-dark border-opacity-10 rounded-lg shadow-sm mb-6">
       <div className="flex items-center justify-between p-3 border-b border-quack-dark border-opacity-10">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-quack-dark">Markdown Cell</span>
-          <button
-            onClick={() => setShowPreview((prev) => !prev)}
-            className="text-xs text-quack-dark text-opacity-60 hover:text-opacity-100"
-          >
-            {showPreview ? 'Hide Preview' : 'Show Preview'}
-          </button>
+
+          {/* Collapse toggle buttons */}
+          <div className="flex items-center gap-0.5 border-l border-quack-dark border-opacity-10 pl-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}
+              title={cell.isEditorCollapsed ? 'Show editor' : 'Hide editor'}
+            >
+              {cell.isEditorCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            </Button>
+            {hasPreview && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
+                title={cell.isPreviewCollapsed ? 'Show preview' : 'Hide preview'}
+              >
+                {cell.isPreviewCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {onMoveUp && cellIndex > 0 && (
@@ -60,21 +78,30 @@ export function MarkdownCell({
         </div>
       </div>
       <div className="p-4 space-y-4">
-        <textarea
-          value={cell.markdown}
-          onChange={(e) => onUpdate({ markdown: e.target.value })}
-          className="w-full min-h-[120px] border border-quack-dark border-opacity-10 rounded-md p-3 text-sm"
-          placeholder="Write markdown here..."
-        />
-        {showPreview && (
-          <div className="border border-quack-dark border-opacity-10 rounded-md p-3 bg-quack-gold bg-opacity-5">
-            <div className="text-xs uppercase text-quack-dark text-opacity-60 mb-2">Preview</div>
-            <div className="markdown-preview">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {cell.markdown || 'Nothing to preview yet.'}
-              </ReactMarkdown>
-            </div>
-          </div>
+        <Collapsible open={!cell.isEditorCollapsed}>
+          <CollapsibleContent>
+            <textarea
+              value={cell.markdown}
+              onChange={(e) => onUpdate({ markdown: e.target.value })}
+              className="w-full min-h-[120px] border border-quack-dark border-opacity-10 rounded-md p-3 text-sm"
+              placeholder="Write markdown here..."
+            />
+          </CollapsibleContent>
+        </Collapsible>
+
+        {hasPreview && (
+          <Collapsible open={!cell.isPreviewCollapsed}>
+            <CollapsibleContent>
+              <div className="border border-quack-dark border-opacity-10 rounded-md p-3 bg-quack-gold bg-opacity-5">
+                <div className="text-xs uppercase text-quack-dark text-opacity-60 mb-2">
+                  Preview
+                </div>
+                <div className="markdown-preview">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{cell.markdown}</ReactMarkdown>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </div>
     </div>

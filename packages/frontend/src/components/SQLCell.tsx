@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { SQLCellHeader } from './SQLCellHeader';
 import { SQLCellEditor } from './SQLCellEditor';
 import { SQLCellError } from './SQLCellError';
 import { SQLCellResults } from './SQLCellResults';
+import { Collapsible, CollapsibleContent } from './ui/collapsible';
 import { useQueryExecution } from '@/hooks/useQuery';
 import { useCreateQuery, useUpdateQuery, type SavedQuery } from '@/hooks/useQueries';
 import { useTables } from '@/hooks/useTables';
 import type { CellState } from '@/hooks/useCellManager';
-import { getDefaultChartConfig, type ChartConfig } from '@/lib/chart-config';
+import { getDefaultChartConfig } from '@/lib/chart-config';
 
 interface SQLCellProps {
   cell: CellState;
@@ -37,14 +39,12 @@ export function SQLCell({
   const updateQueryMutation = useUpdateQuery();
   const { data: tablesData } = useTables();
 
-  const [chartConfig, setChartConfig] = useState<ChartConfig | null>(null);
-
   // Extract table names for autocomplete
   const tableNames = tablesData?.map((t) => t.name) || [];
 
   useEffect(() => {
-    if (cell.result && !chartConfig) {
-      setChartConfig(getDefaultChartConfig(cell.result));
+    if (cell.result && !cell.chartConfig) {
+      onUpdate({ chartConfig: getDefaultChartConfig(cell.result) });
     }
   }, [cell.result]);
 
@@ -87,7 +87,7 @@ export function SQLCell({
 
   const handleSave = async () => {
     if (!cell.sql.trim() || !cell.queryName.trim()) {
-      alert('Please provide both a query name and SQL code');
+      toast.warning('Please provide both a query name and SQL code');
       return;
     }
 
@@ -108,43 +108,58 @@ export function SQLCell({
         onQuerySaved?.(created);
       }
     } catch (error) {
-      alert(`Failed to save query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to save query: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
   return (
-    <div className="flex flex-col h-full border border-quack-dark border-opacity-10 rounded-lg bg-white mb-4 max-w-full overflow-hidden">
+    <div className="flex flex-col h-auto min-w-0 border border-quack-dark border-opacity-10 rounded-lg bg-white mb-4 max-w-6xl">
       <SQLCellHeader
         cellIndex={cellIndex}
         totalCells={totalCells}
         isExecuting={cell.isExecuting}
         isDirty={cell.isDirty}
+        isEditorCollapsed={cell.isEditorCollapsed}
+        isPreviewCollapsed={cell.isPreviewCollapsed}
+        hasResults={!!cell.result}
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         onRemove={onRemove}
+        onToggleEditor={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}
+        onTogglePreview={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
       />
 
-      <SQLCellEditor
-        sql={cell.sql}
-        queryName={cell.queryName}
-        tableNames={tableNames}
-        isExecuting={cell.isExecuting}
-        isSaving={createQueryMutation.isPending || updateQueryMutation.isPending}
-        savedQueryId={cell.savedQueryId}
-        onSqlChange={(sql) => onUpdate({ sql, isDirty: true })}
-        onQueryNameChange={(queryName) => onUpdate({ queryName, isDirty: true })}
-        onExecute={handleExecute}
-        onSave={handleSave}
-      />
+      <Collapsible open={!cell.isEditorCollapsed}>
+        <CollapsibleContent>
+          <SQLCellEditor
+            sql={cell.sql}
+            queryName={cell.queryName}
+            tableNames={tableNames}
+            isExecuting={cell.isExecuting}
+            isSaving={createQueryMutation.isPending || updateQueryMutation.isPending}
+            savedQueryId={cell.savedQueryId}
+            onSqlChange={(sql) => onUpdate({ sql, isDirty: true })}
+            onQueryNameChange={(queryName) => onUpdate({ queryName, isDirty: true })}
+            onExecute={handleExecute}
+            onSave={handleSave}
+          />
+        </CollapsibleContent>
+      </Collapsible>
 
       {cell.error && <SQLCellError error={cell.error} />}
 
       {cell.result && (
-        <SQLCellResults
-          result={cell.result}
-          chartConfig={chartConfig}
-          onChartConfigChange={setChartConfig}
-        />
+        <Collapsible open={!cell.isPreviewCollapsed}>
+          <CollapsibleContent>
+            <SQLCellResults
+              result={cell.result}
+              chartConfig={cell.chartConfig || null}
+              onChartConfigChange={(config) => onUpdate({ chartConfig: config })}
+            />
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );

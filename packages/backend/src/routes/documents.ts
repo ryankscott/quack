@@ -23,15 +23,18 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
     const { name } = request.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
-      return reply.status(400).send({ error: 'Document name is required' });
+      return reply
+        .status(400)
+        .type('application/json')
+        .send({ error: 'Document name is required' });
     }
 
     try {
       const doc = await createDocument(request.body);
-      return doc;
+      return reply.type('application/json').send(doc);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to create document' });
+      return reply.status(500).type('application/json').send({ error: 'Failed to create document' });
     }
   });
 
@@ -39,11 +42,12 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{ Reply: { documents: Document[] } }>('/documents', async (_request, reply) => {
     try {
       const documents = await listDocuments();
-      return { documents };
+      return reply.type('application/json').send({ documents });
     } catch (error) {
       fastify.log.error(error);
       return reply
         .status(500)
+        .type('application/json')
         .send({ error: 'Failed to retrieve documents' } as unknown as { documents: Document[] });
     }
   });
@@ -56,13 +60,13 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       const doc = await getDocumentWithCells(id);
 
       if (!doc) {
-        return reply.status(404).send({ error: 'Document not found' });
+        return reply.status(404).type('application/json').send({ error: 'Document not found' });
       }
 
-      return doc;
+      return reply.type('application/json').send(doc);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to retrieve document' });
+      return reply.status(500).type('application/json').send({ error: 'Failed to retrieve document' });
     }
   });
 
@@ -76,13 +80,13 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
         const doc = await updateDocument(id, request.body);
 
         if (!doc) {
-          return reply.status(404).send({ error: 'Document not found' });
+          return reply.status(404).type('application/json').send({ error: 'Document not found' });
         }
 
-        return doc;
+        return reply.type('application/json').send(doc);
       } catch (error) {
         fastify.log.error(error);
-        return reply.status(500).send({ error: 'Failed to update document' });
+        return reply.status(500).type('application/json').send({ error: 'Failed to update document' });
       }
     }
   );
@@ -95,13 +99,13 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       const success = await deleteDocument(id);
 
       if (!success) {
-        return reply.status(404).send({ error: 'Document not found' });
+        return reply.status(404).type('application/json').send({ error: 'Document not found' });
       }
 
-      return { success: true };
+      return reply.type('application/json').send({ success: true });
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to delete document' });
+      return reply.status(500).type('application/json').send({ error: 'Failed to delete document' });
     }
   });
 
@@ -113,7 +117,7 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       const { dataMode } = request.body;
 
       if (!['none', 'query-results', 'referenced-tables', 'full-db'].includes(dataMode)) {
-        return reply.status(400).send({
+        return reply.status(400).type('application/json').send({
           error:
             'Invalid dataMode. Must be one of: none, query-results, referenced-tables, full-db',
         });
@@ -123,7 +127,7 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
         const result = await exportDocument(id, dataMode);
 
         if (!result) {
-          return reply.status(404).send({ error: 'Document not found' });
+          return reply.status(404).type('application/json').send({ error: 'Document not found' });
         }
 
         const fileContent = await fs.readFile(result.path);
@@ -134,7 +138,10 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       } catch (error) {
         fastify.log.error(error);
         const message = (error as Error)?.message ?? 'Unknown error';
-        return reply.status(500).send({ error: `Export failed: ${message}` });
+        return reply
+          .status(500)
+          .type('application/json')
+          .send({ error: `Export failed: ${message}` });
       }
     }
   );
@@ -145,25 +152,31 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       const data = await request.file();
 
       if (!data) {
-        return reply.status(400).send({ error: 'No file provided' });
+        return reply.status(400).type('application/json').send({ error: 'No file provided' });
       }
 
       if (!data.filename.endsWith('.quackdb')) {
-        return reply.status(400).send({ error: 'File must be a .quackdb file' });
+        return reply
+          .status(400)
+          .type('application/json')
+          .send({ error: 'File must be a .quackdb file' });
       }
 
       const buffer = await data.toBuffer();
       const doc = await importDocument(buffer);
 
       if (!doc) {
-        return reply.status(400).send({ error: 'No document found in import file' });
+        return reply
+          .status(400)
+          .type('application/json')
+          .send({ error: 'No document found in import file' });
       }
 
-      return doc;
+      return reply.type('application/json').send(doc);
     } catch (error) {
       fastify.log.error(error);
       const message = (error as Error)?.message ?? 'Unknown error';
-      return reply.status(500).send({ error: `Import failed: ${message}` });
+      return reply.status(500).type('application/json').send({ error: `Import failed: ${message}` });
     }
   });
 }

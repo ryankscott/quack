@@ -1,6 +1,7 @@
 import '@/styles/globals.css';
 import { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
+import { Toaster } from '@/components/ui/sonner';
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,6 +10,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen bg-white">
+      <Toaster />
       <header className="border-b border-quack-dark border-opacity-10 bg-white shadow-sm">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
@@ -46,7 +48,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </header>
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
     </div>
   );
 }

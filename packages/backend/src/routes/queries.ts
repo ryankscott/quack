@@ -112,7 +112,10 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
     const { name, sql } = request.body;
 
     if (!name || !sql) {
-      return reply.status(400).send({ error: 'name and sql are required' });
+      return reply
+        .status(400)
+        .type('application/json')
+        .send({ error: 'name and sql are required' });
     }
 
     try {
@@ -133,10 +136,11 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
       await storeTableReferences(queryId, tableNames);
 
       // Return query with references and warnings
-      return await buildQueryResponse(queryId);
+      const result = await buildQueryResponse(queryId);
+      return reply.type('application/json').send(result);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to create query' });
+      return reply.status(500).type('application/json').send({ error: 'Failed to create query' });
     }
   });
 
@@ -150,11 +154,12 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
       // Build full query objects with references
       const queries = await Promise.all(queryRows.map((q) => buildQueryResponse(q.id)));
 
-      return { queries };
+      return reply.type('application/json').send({ queries });
     } catch (error) {
       fastify.log.error(error);
       return reply
         .status(500)
+        .type('application/json')
         .send({ error: 'Failed to retrieve queries' } as unknown as { queries: SavedQuery[] });
     }
   });
@@ -170,13 +175,14 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
       );
 
       if (queries.length === 0) {
-        return reply.status(404).send({ error: 'Query not found' });
+        return reply.status(404).type('application/json').send({ error: 'Query not found' });
       }
 
-      return await buildQueryResponse(id);
+      const result = await buildQueryResponse(id);
+      return reply.type('application/json').send(result);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to retrieve query' });
+      return reply.status(500).type('application/json').send({ error: 'Failed to retrieve query' });
     }
   });
 
@@ -188,7 +194,10 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
       const { name, sql } = request.body;
 
       if (!name && !sql) {
-        return reply.status(400).send({ error: 'name or sql is required' });
+        return reply
+          .status(400)
+          .type('application/json')
+          .send({ error: 'name or sql is required' });
       }
 
       try {
@@ -199,7 +208,7 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
         );
 
         if (existing.length === 0) {
-          return reply.status(404).send({ error: 'Query not found' });
+          return reply.status(404).type('application/json').send({ error: 'Query not found' });
         }
 
         // Build update query
@@ -225,10 +234,11 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
 
         await dbConnection.run(`UPDATE _queries SET ${updates.join(', ')} WHERE id = ?`, ...params);
 
-        return await buildQueryResponse(id);
+        const result = await buildQueryResponse(id);
+        return reply.type('application/json').send(result);
       } catch (error) {
         fastify.log.error(error);
-        return reply.status(500).send({ error: 'Failed to update query' });
+        return reply.status(500).type('application/json').send({ error: 'Failed to update query' });
       }
     }
   );
@@ -244,15 +254,15 @@ export async function queriesRoutes(fastify: FastifyInstance): Promise<void> {
       );
 
       if (existing.length === 0) {
-        return reply.status(404).send({ error: 'Query not found' });
+        return reply.status(404).type('application/json').send({ error: 'Query not found' });
       }
 
       await dbConnection.run('DELETE FROM _queries WHERE id = ?', id);
 
-      return { success: true };
+      return reply.type('application/json').send({ success: true });
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to delete query' });
+      return reply.status(500).type('application/json').send({ error: 'Failed to delete query' });
     }
   });
 }

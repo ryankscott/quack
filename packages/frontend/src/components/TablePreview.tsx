@@ -44,7 +44,7 @@ export function TablePreview({ tableName }: TablePreviewProps) {
       : '';
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-quack-dark border-opacity-10 bg-white">
         <h2 className="text-lg font-semibold text-quack-dark">{tableName}</h2>
         <div className="text-sm text-quack-dark text-opacity-70">
@@ -52,7 +52,7 @@ export function TablePreview({ tableName }: TablePreviewProps) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 min-w-0">
         <DataTable data={data} footerInfo={footerInfo} />
       </div>
     </div>

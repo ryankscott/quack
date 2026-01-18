@@ -28,7 +28,7 @@ export function WorkspaceCellList({
   onQuerySaved,
 }: WorkspaceCellListProps) {
   return (
-    <div className="flex-1 overflow-y-auto p-4">
+    <div className="flex-1 min-h-0 overflow-y-auto p-4 w-full">
       {cells.map((cell) =>
         cell.type === 'markdown' ? (
           <MarkdownCell

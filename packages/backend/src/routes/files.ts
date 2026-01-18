@@ -32,7 +32,7 @@ export async function filesRoutes(fastify: FastifyInstance): Promise<void> {
       const file = await request.file();
 
       if (!file) {
-        return reply.status(400).send({ error: 'No file provided' });
+        return reply.status(400).type('application/json').send({ error: 'No file provided' });
       }
 
       const fileId = generateFileId();
@@ -51,10 +51,10 @@ export async function filesRoutes(fastify: FastifyInstance): Promise<void> {
           uploadPath
         );
 
-        return { file_id: fileId };
+        return reply.type('application/json').send({ file_id: fileId });
       } catch (error) {
         fastify.log.error(error);
-        return reply.status(500).send({ error: 'Failed to upload file' });
+        return reply.status(500).type('application/json').send({ error: 'Failed to upload file' });
       }
     }
   );
@@ -65,11 +65,12 @@ export async function filesRoutes(fastify: FastifyInstance): Promise<void> {
       const files = await dbConnection.query<FileMetadata>(
         'SELECT * FROM _files ORDER BY uploaded_at DESC'
       );
-      return { files };
+      return reply.type('application/json').send({ files });
     } catch (error) {
       fastify.log.error(error);
       return reply
         .status(500)
+        .type('application/json')
         .send({ error: 'Failed to retrieve files' } as unknown as { files: FileMetadata[] });
     }
   });

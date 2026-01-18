@@ -42,6 +42,8 @@ export function FileList({ onTableCreated }: FileListProps) {
     return <LoadingState message="Loading files..." />;
   }
 
+  console.log('FileList error:', error);
+
   if (error) {
     return <ErrorState error={error} />;
   }

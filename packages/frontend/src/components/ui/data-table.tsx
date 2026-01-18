@@ -71,8 +71,8 @@ export function DataTable({ data, pageSize = 20, footerInfo }: DataTableProps) {
   }
 
   return (
-    <div className="flex flex-col h-full border border-quack-dark border-opacity-10 rounded min-w-0">
-      <div className="flex-1 overflow-auto min-w-0">
+    <div className="flex flex-col h-full overflow-hidden border border-quack-dark border-opacity-10 rounded min-w-0">
+      <div className="flex-1 min-h-0 min-w-0 overflow-auto">
         <table className="text-sm min-w-full">
           <thead className="bg-quack-gold_bg sticky top-0">
             {table.getHeaderGroups().map((headerGroup) => (

@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { useExportDocument, useImportDocument, DataMode } from '../hooks/useDocuments';
 
 interface DocumentActionsProps {
@@ -21,7 +22,7 @@ export function DocumentActions({
 
   const handleExport = async () => {
     if (!documentId) {
-      alert('Please select or create a document first');
+      toast.error('Please select or create a document first');
       return;
     }
 
@@ -42,7 +43,7 @@ export function DocumentActions({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      alert(`Export failed: ${(error as Error).message}`);
+      toast.error(`Export failed: ${(error as Error).message}`);
     } finally {
       setIsExporting(false);
     }
@@ -59,9 +60,9 @@ export function DocumentActions({
     setIsImporting(true);
     try {
       await importMutation.mutateAsync(file);
-      alert('Document imported successfully');
+      toast.success('Document imported successfully');
     } catch (error) {
-      alert(`Import failed: ${(error as Error).message}`);
+      toast.error(`Import failed: ${(error as Error).message}`);
     } finally {
       setIsImporting(false);
       // Reset file input

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { QueryResult } from './useQuery';
+import type { ChartConfig } from '@/lib/chart-config';
 
 export interface CellState {
   id: string;
@@ -12,6 +13,10 @@ export interface CellState {
   error?: string;
   isExecuting: boolean;
   isDirty: boolean;
+  chartConfig?: ChartConfig;
+  chartImageUrl?: string;
+  isEditorCollapsed?: boolean;
+  isPreviewCollapsed?: boolean;
 }
 
 export function useCellManager(initialCells: CellState[] = []) {
