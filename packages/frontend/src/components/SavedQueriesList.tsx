@@ -1,5 +1,6 @@
 import { Trash2, Database, AlertCircle } from 'lucide-react';
 import { useQueries, useDeleteQuery, type SavedQuery } from '../hooks/useQueries';
+import { LoadingState, ErrorState } from './ui/loading-error';
 
 interface SavedQueriesListProps {
   onLoadQuery: (query: SavedQuery) => void;
@@ -17,11 +18,11 @@ export function SavedQueriesList({ onLoadQuery }: SavedQueriesListProps) {
   };
 
   if (isLoading) {
-    return <div className="p-4 text-quack-dark text-opacity-60">Loading queries...</div>;
+    return <LoadingState message="Loading queries..." />;
   }
 
   if (error) {
-    return <div className="p-4 text-red-600">Failed to load queries: {error.message}</div>;
+    return <ErrorState error={error} title="Failed to load queries" />;
   }
 
   if (!queries || queries.length === 0) {

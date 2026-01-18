@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 
 export interface QueryResultColumn {
   name: string;
@@ -22,18 +23,7 @@ interface QueryExecuteResponse {
 }
 
 async function executeQuery(request: QueryExecuteRequest): Promise<QueryResult> {
-  const response = await fetch('/api/query/execute', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to execute query');
-  }
-
-  const data: QueryExecuteResponse = await response.json();
+  const data = await apiClient.post<QueryExecuteResponse>('/query/execute', request);
   return data.result;
 }
 

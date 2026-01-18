@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 
 export interface FileMetadata {
   id: string;
@@ -16,28 +17,14 @@ interface UploadResponse {
 }
 
 async function fetchFiles(): Promise<FileMetadata[]> {
-  const response = await fetch('/api/files');
-  if (!response.ok) {
-    throw new Error('Failed to fetch files');
-  }
-  const data: FilesResponse = await response.json();
+  const data = await apiClient.get<FilesResponse>('/files');
   return data.files;
 }
 
 async function uploadFile(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
-
-  const response = await fetch('/api/files/upload', {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to upload file');
-  }
-
-  const data: UploadResponse = await response.json();
+  const data = await apiClient.upload<UploadResponse>('/files/upload', formData);
   return data.file_id;
 }
 

@@ -47,7 +47,10 @@ describe('useQueries', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toEqual(mockQueries);
-    expect(global.fetch).toHaveBeenCalledWith('/api/queries');
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/queries'),
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 
   it('creates a new query', async () => {
@@ -73,11 +76,14 @@ describe('useQueries', () => {
       sql: 'SELECT 1',
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/queries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'New Query', sql: 'SELECT 1' }),
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/queries'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'New Query', sql: 'SELECT 1' }),
+      })
+    );
   });
 
   it('updates an existing query', async () => {
@@ -103,11 +109,14 @@ describe('useQueries', () => {
       request: { name: 'Updated Query', sql: 'SELECT 2' },
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/queries/1', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Updated Query', sql: 'SELECT 2' }),
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/queries/1'),
+      expect.objectContaining({
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Updated Query', sql: 'SELECT 2' }),
+      })
+    );
   });
 
   it('deletes a query', async () => {
@@ -122,8 +131,11 @@ describe('useQueries', () => {
 
     await result.current.mutateAsync('1');
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/queries/1', {
-      method: 'DELETE',
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/queries/1'),
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
   });
 });

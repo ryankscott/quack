@@ -1,4 +1,5 @@
 import { useTables } from '@/hooks/useTables';
+import { LoadingState, ErrorState } from './ui/loading-error';
 
 interface TableListProps {
   selectedTable: string | null;
@@ -9,19 +10,11 @@ export function TableList({ selectedTable, onSelectTable }: TableListProps) {
   const { data: tables, isLoading, error } = useTables();
 
   if (isLoading) {
-    return (
-      <div className="p-4">
-        <div className="text-sm text-quack-dark text-opacity-60">Loading tables...</div>
-      </div>
-    );
+    return <LoadingState message="Loading tables..." />;
   }
 
   if (error) {
-    return (
-      <div className="p-4">
-        <div className="text-sm text-red-600">Error: {error.message}</div>
-      </div>
-    );
+    return <ErrorState error={error} />;
   }
 
   if (!tables || tables.length === 0) {

@@ -1,10 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import dbConnection from '../db/connection.js';
 import { formatQueryResult } from '../utils/query.js';
-
-const DEFAULT_LIMIT = 1000;
-const MAX_LIMIT = 10000;
-const DEFAULT_TIMEOUT_MS = 30_000;
+import { QUERY_CONFIG } from '../config.js';
 
 class QueryTimeoutError extends Error {
   constructor(message: string) {
@@ -46,13 +43,15 @@ export async function queryRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       const sanitizedSql = sanitizeSql(sql);
-      const requestedLimit = Number(limit ?? DEFAULT_LIMIT);
+      const requestedLimit = Number(limit ?? QUERY_CONFIG.DEFAULT_LIMIT);
       const limitValue = Number.isFinite(requestedLimit)
-        ? Math.min(Math.max(requestedLimit, 1), MAX_LIMIT)
-        : DEFAULT_LIMIT;
+        ? Math.min(Math.max(requestedLimit, 1), QUERY_CONFIG.MAX_LIMIT)
+        : QUERY_CONFIG.DEFAULT_LIMIT;
 
-      const timeoutMs = Number(process.env.QUERY_TIMEOUT_MS ?? DEFAULT_TIMEOUT_MS);
-      const effectiveTimeout = Number.isFinite(timeoutMs) ? timeoutMs : DEFAULT_TIMEOUT_MS;
+      const timeoutMs = Number(process.env.QUERY_TIMEOUT_MS ?? QUERY_CONFIG.DEFAULT_TIMEOUT_MS);
+      const effectiveTimeout = Number.isFinite(timeoutMs)
+        ? timeoutMs
+        : QUERY_CONFIG.DEFAULT_TIMEOUT_MS;
 
       try {
         const execution = async () => {

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 
 export interface TableMetadata {
   id: string;
@@ -33,37 +34,18 @@ interface CreateTableResponse {
 }
 
 async function fetchTables(): Promise<TableMetadata[]> {
-  const response = await fetch('/api/tables');
-  if (!response.ok) {
-    throw new Error('Failed to fetch tables');
-  }
-  const data: TablesResponse = await response.json();
+  const data = await apiClient.get<TablesResponse>('/tables');
   return data.tables;
 }
 
 async function createTable(request: CreateTableRequest): Promise<CreateTableResponse> {
-  const response = await fetch('/api/tables', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create table');
-  }
-
-  return response.json();
+  return apiClient.post<CreateTableResponse>('/tables', request);
 }
 
 async function fetchTablePreview(tableName: string, limit = 100): Promise<TablePreview> {
-  const response = await fetch(
-    `/api/tables/${encodeURIComponent(tableName)}/preview?limit=${limit}`
-  );
-  if (!response.ok) {
-    throw new Error('Failed to fetch table preview');
-  }
-  return response.json();
+  return apiClient.get<TablePreview>(`/tables/${encodeURIComponent(tableName)}/preview`, {
+    params: { limit },
+  });
 }
 
 export function useTables() {

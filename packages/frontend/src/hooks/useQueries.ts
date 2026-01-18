@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE_URL = '/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface SavedQuery {
   id: string;
@@ -29,11 +28,7 @@ export function useQueries() {
   return useQuery({
     queryKey: ['queries'],
     queryFn: async (): Promise<SavedQuery[]> => {
-      const response = await fetch(`${API_BASE_URL}/queries`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch queries: ${response.statusText}`);
-      }
-      const data = await response.json();
+      const data = await apiClient.get<{ queries: SavedQuery[] }>('/queries');
       return data.queries;
     },
   });
@@ -47,11 +42,7 @@ export function useSavedQuery(id: string | null) {
     queryKey: ['queries', id],
     queryFn: async (): Promise<SavedQuery> => {
       if (!id) throw new Error('Query ID is required');
-      const response = await fetch(`${API_BASE_URL}/queries/${id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch query: ${response.statusText}`);
-      }
-      return response.json();
+      return apiClient.get<SavedQuery>(`/queries/${id}`);
     },
     enabled: !!id,
   });
@@ -65,16 +56,7 @@ export function useCreateQuery() {
 
   return useMutation({
     mutationFn: async (request: CreateQueryRequest): Promise<SavedQuery> => {
-      const response = await fetch(`${API_BASE_URL}/queries`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create query');
-      }
-      return response.json();
+      return apiClient.post<SavedQuery>('/queries', request);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queries'] });
@@ -96,16 +78,7 @@ export function useUpdateQuery() {
       id: string;
       request: UpdateQueryRequest;
     }): Promise<SavedQuery> => {
-      const response = await fetch(`${API_BASE_URL}/queries/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update query');
-      }
-      return response.json();
+      return apiClient.put<SavedQuery>(`/queries/${id}`, request);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['queries'] });
@@ -122,13 +95,7 @@ export function useDeleteQuery() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const response = await fetch(`${API_BASE_URL}/queries/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete query');
-      }
+      await apiClient.delete<void>(`/queries/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queries'] });

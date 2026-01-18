@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useFiles } from '@/hooks/useFiles';
 import { useCreateTable } from '@/hooks/useTables';
+import { LoadingState, ErrorState } from './ui/loading-error';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 interface FileListProps {
   onTableCreated?: (tableName: string) => void;
@@ -36,19 +39,11 @@ export function FileList({ onTableCreated }: FileListProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-4">
-        <div className="text-sm text-quack-dark text-opacity-60">Loading files...</div>
-      </div>
-    );
+    return <LoadingState message="Loading files..." />;
   }
 
   if (error) {
-    return (
-      <div className="p-4">
-        <div className="text-sm text-red-600">Error: {error.message}</div>
-      </div>
-    );
+    return <ErrorState error={error} />;
   }
 
   if (!files || files.length === 0) {
@@ -75,40 +70,41 @@ export function FileList({ onTableCreated }: FileListProps) {
                   {new Date(file.uploaded_at).toLocaleString()}
                 </div>
               </div>
-              <button
+              <Button
                 onClick={() => handleCreateTable(file.id)}
-                className="ml-2 text-xs px-2 py-1 bg-quack-orange text-white rounded hover:bg-opacity-90 disabled:opacity-50"
                 disabled={createTableMutation.isPending}
+                size="sm"
+                variant="default"
               >
                 Create Table
-              </button>
+              </Button>
             </div>
 
             {selectedFileId === file.id && (
               <div className="mt-3 pt-3 border-t border-quack-dark border-opacity-10">
-                <input
+                <Input
                   type="text"
                   value={tableName}
                   onChange={(e) => setTableName(e.target.value)}
                   placeholder="Enter table name (e.g., my_data)"
-                  className="input-base w-full"
                   disabled={createTableMutation.isPending}
                 />
                 <div className="mt-2 flex gap-2">
-                  <button
+                  <Button
                     onClick={handleSubmit}
                     disabled={!tableName.trim() || createTableMutation.isPending}
-                    className="text-xs px-3 py-1 bg-quack-orange text-white rounded hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    size="sm"
                   >
                     {createTableMutation.isPending ? 'Creating...' : 'Create'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setSelectedFileId(null)}
                     disabled={createTableMutation.isPending}
-                    className="text-xs px-3 py-1 bg-quack-dark bg-opacity-10 text-quack-dark rounded hover:bg-opacity-20"
+                    size="sm"
+                    variant="outline"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
                 {createTableMutation.isError && (
                   <div className="mt-2 text-xs text-red-600">

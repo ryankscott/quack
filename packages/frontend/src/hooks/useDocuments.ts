@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE_URL = '/api';
+import { apiClient } from '@/lib/api-client';
 
 export interface DocumentCell {
   id: string;
@@ -60,11 +59,7 @@ export function useDocuments() {
   return useQuery({
     queryKey: ['documents'],
     queryFn: async (): Promise<Document[]> => {
-      const response = await fetch(`${API_BASE_URL}/documents`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch documents: ${response.statusText}`);
-      }
-      const data = await response.json();
+      const data = await apiClient.get<{ documents: Document[] }>('/documents');
       return data.documents;
     },
   });
@@ -78,11 +73,7 @@ export function useDocument(id: string | null) {
     queryKey: ['documents', id],
     queryFn: async (): Promise<DocumentWithCells> => {
       if (!id) throw new Error('Document ID is required');
-      const response = await fetch(`${API_BASE_URL}/documents/${id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch document: ${response.statusText}`);
-      }
-      return response.json();
+      return apiClient.get<DocumentWithCells>(`/documents/${id}`);
     },
     enabled: !!id,
   });
@@ -96,16 +87,7 @@ export function useCreateDocument() {
 
   return useMutation({
     mutationFn: async (request: CreateDocumentRequest): Promise<DocumentWithCells> => {
-      const response = await fetch(`${API_BASE_URL}/documents`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create document');
-      }
-      return response.json();
+      return apiClient.post<DocumentWithCells>('/documents', request);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
@@ -127,16 +109,7 @@ export function useUpdateDocument() {
       id: string;
       request: UpdateDocumentRequest;
     }): Promise<DocumentWithCells> => {
-      const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update document');
-      }
-      return response.json();
+      return apiClient.put<DocumentWithCells>(`/documents/${id}`, request);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
@@ -153,13 +126,7 @@ export function useDeleteDocument() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete document');
-      }
+      await apiClient.delete<void>(`/documents/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
@@ -179,7 +146,9 @@ export function useExportDocument() {
       documentId: string;
       dataMode: DataMode;
     }): Promise<Blob> => {
-      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/export`, {
+      // Export needs special handling to get blob response
+      const url = new URL(`/api/documents/${documentId}/export`, window.location.origin);
+      const response = await fetch(url.toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dataMode }),
@@ -203,16 +172,7 @@ export function useImportDocument() {
     mutationFn: async (file: File): Promise<DocumentWithCells> => {
       const formData = new FormData();
       formData.append('file', file);
-
-      const response = await fetch(`${API_BASE_URL}/documents/import`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to import document');
-      }
-      return response.json();
+      return apiClient.upload<DocumentWithCells>('/documents/import', formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });

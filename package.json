@@ -8,7 +8,8 @@
     "build": "pnpm --filter backend build && pnpm --filter frontend build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "generate:types": "openapi-typescript openapi.yaml -o packages/frontend/src/lib/api-types.ts"
   },
   "devDependencies": {
     "openapi-typescript": "^7.10.1",
