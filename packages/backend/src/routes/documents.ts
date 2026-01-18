@@ -34,7 +34,10 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.type('application/json').send(doc);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).type('application/json').send({ error: 'Failed to create document' });
+      return reply
+        .status(500)
+        .type('application/json')
+        .send({ error: 'Failed to create document' });
     }
   });
 
@@ -66,7 +69,10 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.type('application/json').send(doc);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).type('application/json').send({ error: 'Failed to retrieve document' });
+      return reply
+        .status(500)
+        .type('application/json')
+        .send({ error: 'Failed to retrieve document' });
     }
   });
 
@@ -86,7 +92,10 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
         return reply.type('application/json').send(doc);
       } catch (error) {
         fastify.log.error(error);
-        return reply.status(500).type('application/json').send({ error: 'Failed to update document' });
+        return reply
+          .status(500)
+          .type('application/json')
+          .send({ error: 'Failed to update document' });
       }
     }
   );
@@ -105,7 +114,10 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.type('application/json').send({ success: true });
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).type('application/json').send({ error: 'Failed to delete document' });
+      return reply
+        .status(500)
+        .type('application/json')
+        .send({ error: 'Failed to delete document' });
     }
   });
 
@@ -176,7 +188,10 @@ export async function documentsRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       fastify.log.error(error);
       const message = (error as Error)?.message ?? 'Unknown error';
-      return reply.status(500).type('application/json').send({ error: `Import failed: ${message}` });
+      return reply
+        .status(500)
+        .type('application/json')
+        .send({ error: `Import failed: ${message}` });
     }
   });
 }
