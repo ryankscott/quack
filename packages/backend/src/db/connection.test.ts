@@ -61,11 +61,20 @@ describe('Database Schema', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('should create _queries table', async () => {
+  it('should create _notebooks table', async () => {
     const result = await dbConnection.query(`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_name = '_queries'
+      WHERE table_name = '_notebooks'
+    `);
+    expect(result).toHaveLength(1);
+  });
+
+  it('should create _notebook_cells table', async () => {
+    const result = await dbConnection.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_name = '_notebook_cells'
     `);
     expect(result).toHaveLength(1);
   });

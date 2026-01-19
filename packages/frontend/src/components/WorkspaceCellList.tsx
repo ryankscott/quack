@@ -1,17 +1,14 @@
 import { SQLCell } from './SQLCell';
 import { MarkdownCell } from './MarkdownCell';
 import type { CellState } from '@/hooks/useCellManager';
-import type { SavedQuery } from '@/hooks/useQueries';
 
 interface WorkspaceCellListProps {
   cells: CellState[];
-  selectedQuery?: SavedQuery;
   getCellIndex: (cellId: string) => number;
   onUpdateCell: (cellId: string, updates: Partial<CellState>) => void;
   onRemoveCell: (cellId: string) => void;
   onMoveCellUp: (cellId: string) => void;
   onMoveCellDown: (cellId: string) => void;
-  onQuerySaved: (query: SavedQuery) => void;
 }
 
 /**
@@ -19,13 +16,11 @@ interface WorkspaceCellListProps {
  */
 export function WorkspaceCellList({
   cells,
-  selectedQuery,
   getCellIndex,
   onUpdateCell,
   onRemoveCell,
   onMoveCellUp,
   onMoveCellDown,
-  onQuerySaved,
 }: WorkspaceCellListProps) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-4 w-full">
@@ -51,8 +46,6 @@ export function WorkspaceCellList({
             onRemove={() => onRemoveCell(cell.id)}
             onMoveUp={() => onMoveCellUp(cell.id)}
             onMoveDown={() => onMoveCellDown(cell.id)}
-            initialQuery={selectedQuery}
-            onQuerySaved={onQuerySaved}
           />
         )
       )}

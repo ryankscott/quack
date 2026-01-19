@@ -324,14 +324,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/queries": {
+    "/notebooks": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List saved queries */
+        /** List notebooks */
         get: {
             parameters: {
                 query?: never;
@@ -341,21 +341,21 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Array of saved queries */
+                /** @description Array of notebooks */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            queries?: components["schemas"]["SavedQuery"][];
+                            notebooks?: components["schemas"]["Notebook"][];
                         };
                     };
                 };
             };
         };
         put?: never;
-        /** Create saved query */
+        /** Create notebook */
         post: {
             parameters: {
                 query?: never;
@@ -365,17 +365,17 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["CreateQueryRequest"];
+                    "application/json": components["schemas"]["CreateNotebookRequest"];
                 };
             };
             responses: {
-                /** @description Query created */
+                /** @description Notebook created */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SavedQuery"];
+                        "application/json": components["schemas"]["Notebook"];
                     };
                 };
                 /** @description Invalid input */
@@ -395,14 +395,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/queries/{id}": {
+    "/notebooks/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get saved query by ID */
+        /** Get notebook by ID */
         get: {
             parameters: {
                 query?: never;
@@ -414,16 +414,16 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Query details */
+                /** @description Notebook details */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SavedQuery"];
+                        "application/json": components["schemas"]["NotebookWithCells"];
                     };
                 };
-                /** @description Query not found */
+                /** @description Notebook not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -434,7 +434,7 @@ export interface paths {
                 };
             };
         };
-        /** Update saved query */
+        /** Update notebook */
         put: {
             parameters: {
                 query?: never;
@@ -446,20 +446,20 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["UpdateQueryRequest"];
+                    "application/json": components["schemas"]["UpdateNotebookRequest"];
                 };
             };
             responses: {
-                /** @description Query updated */
+                /** @description Notebook updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SavedQuery"];
+                        "application/json": components["schemas"]["NotebookWithCells"];
                     };
                 };
-                /** @description Query not found */
+                /** @description Notebook not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -471,7 +471,7 @@ export interface paths {
             };
         };
         post?: never;
-        /** Delete saved query */
+        /** Delete notebook */
         delete: {
             parameters: {
                 query?: never;
@@ -483,7 +483,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Query deleted */
+                /** @description Notebook deleted */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -494,7 +494,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Query not found */
+                /** @description Notebook not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -510,193 +510,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/documents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List documents */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Array of documents */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            documents?: components["schemas"]["Document"][];
-                        };
-                    };
-                };
-            };
-        };
-        put?: never;
-        /** Create document */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateDocumentRequest"];
-                };
-            };
-            responses: {
-                /** @description Document created */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Document"];
-                    };
-                };
-                /** @description Invalid input */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/documents/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get document by ID */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Document details */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DocumentWithCells"];
-                    };
-                };
-                /** @description Document not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        /** Update document */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateDocumentRequest"];
-                };
-            };
-            responses: {
-                /** @description Document updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DocumentWithCells"];
-                    };
-                };
-                /** @description Document not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        /** Delete document */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Document deleted */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            success?: boolean;
-                        };
-                    };
-                };
-                /** @description Document not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/documents/{id}/export": {
+    "/notebooks/{id}/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -705,7 +519,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Export document to portable .quackdb file */
+        /** Export notebook to portable .quackdb file */
         post: {
             parameters: {
                 query?: never;
@@ -739,7 +553,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Document not found */
+                /** @description Notebook not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -756,7 +570,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/documents/import": {
+    "/notebooks/import": {
         parameters: {
             query?: never;
             header?: never;
@@ -765,7 +579,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Import document from .quackdb file */
+        /** Import notebook from .quackdb file */
         post: {
             parameters: {
                 query?: never;
@@ -788,7 +602,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["DocumentWithCells"];
+                        "application/json": components["schemas"]["NotebookWithCells"];
                     };
                 };
                 /** @description Invalid file or format */
@@ -872,28 +686,7 @@ export interface components {
             truncated: boolean;
             rowCount: number;
         };
-        SavedQuery: {
-            id: string;
-            name: string;
-            sql: string;
-            /** @description List of table names referenced in the SQL query */
-            referencedTables: string[];
-            /** @description Warning messages (e.g., referenced tables that don't exist) */
-            warnings?: string[];
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        CreateQueryRequest: {
-            name: string;
-            sql: string;
-        };
-        UpdateQueryRequest: {
-            name?: string;
-            sql?: string;
-        };
-        Document: {
+        Notebook: {
             id: string;
             name: string;
             markdown?: string | null;
@@ -902,9 +695,9 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
-        DocumentCell: {
+        NotebookCell: {
             id: string;
-            document_id: string;
+            notebook_id: string;
             cell_index: number;
             /** @enum {string} */
             cell_type: "sql" | "markdown";
@@ -914,23 +707,37 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
-        DocumentWithCells: {
+        NotebookWithCells: {
             id: string;
             name: string;
             markdown?: string | null;
-            cells: components["schemas"]["DocumentCell"][];
+            cells: components["schemas"]["NotebookCell"][];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
         };
-        CreateDocumentRequest: {
+        CreateNotebookRequest: {
             name: string;
             markdown?: string;
+            cells?: {
+                /** @enum {string} */
+                cell_type?: "sql" | "markdown";
+                sql_text?: string;
+                markdown_text?: string;
+                chart_config?: string;
+            }[];
         };
-        UpdateDocumentRequest: {
+        UpdateNotebookRequest: {
             name?: string;
             markdown?: string;
+            cells?: {
+                /** @enum {string} */
+                cell_type?: "sql" | "markdown";
+                sql_text?: string;
+                markdown_text?: string;
+                chart_config?: string;
+            }[];
         };
         ExportRequest: {
             /**

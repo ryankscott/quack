@@ -158,22 +158,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /queries:
+  /notebooks:
     post:
-      summary: Create saved query
+      summary: Create notebook
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateQueryRequest'
+              $ref: '#/components/schemas/CreateNotebookRequest'
       responses:
         '200':
-          description: Query created
+          description: Notebook created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SavedQuery'
+                $ref: '#/components/schemas/Notebook'
         '400':
           description: Invalid input
           content:
@@ -181,22 +181,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
-      summary: List saved queries
+      summary: List notebooks
       responses:
         '200':
-          description: Array of saved queries
+          description: Array of notebooks
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  queries:
+                  notebooks:
                     type: array
                     items:
-                      $ref: '#/components/schemas/SavedQuery'
-  /queries/{id}:
+                      $ref: '#/components/schemas/Notebook'
+  /notebooks/{id}:
     get:
-      summary: Get saved query by ID
+      summary: Get notebook by ID
       parameters:
         - name: id
           in: path
@@ -205,19 +205,19 @@ paths:
             type: string
       responses:
         '200':
-          description: Query details
+          description: Notebook details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SavedQuery'
+                $ref: '#/components/schemas/NotebookWithCells'
         '404':
-          description: Query not found
+          description: Notebook not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
-      summary: Update saved query
+      summary: Update notebook
       parameters:
         - name: id
           in: path
@@ -229,22 +229,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateQueryRequest'
+              $ref: '#/components/schemas/UpdateNotebookRequest'
       responses:
         '200':
-          description: Query updated
+          description: Notebook updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SavedQuery'
+                $ref: '#/components/schemas/NotebookWithCells'
         '404':
-          description: Query not found
+          description: Notebook not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
-      summary: Delete saved query
+      summary: Delete notebook
       parameters:
         - name: id
           in: path
@@ -253,7 +253,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Query deleted
+          description: Notebook deleted
           content:
             application/json:
               schema:
@@ -262,123 +262,14 @@ paths:
                   success:
                     type: boolean
         '404':
-          description: Query not found
+          description: Notebook not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /documents:
+  /notebooks/{id}/export:
     post:
-      summary: Create document
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateDocumentRequest'
-      responses:
-        '200':
-          description: Document created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Document'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    get:
-      summary: List documents
-      responses:
-        '200':
-          description: Array of documents
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  documents:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Document'
-  /documents/{id}:
-    get:
-      summary: Get document by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Document details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DocumentWithCells'
-        '404':
-          description: Document not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    put:
-      summary: Update document
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateDocumentRequest'
-      responses:
-        '200':
-          description: Document updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DocumentWithCells'
-        '404':
-          description: Document not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    delete:
-      summary: Delete document
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Document deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-        '404':
-          description: Document not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /documents/{id}/export:
-    post:
-      summary: Export document to portable .quackdb file
+      summary: Export notebook to portable .quackdb file
       parameters:
         - name: id
           in: path
@@ -406,14 +297,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Document not found
+          description: Notebook not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /documents/import:
+  /notebooks/import:
     post:
-      summary: Import document from .quackdb file
+      summary: Import notebook from .quackdb file
       requestBody:
         required: true
         content:
@@ -432,7 +323,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentWithCells'
+                $ref: '#/components/schemas/NotebookWithCells'
         '400':
           description: Invalid file or format
           content:
@@ -578,56 +469,7 @@ components:
         - rows
         - truncated
         - rowCount
-    SavedQuery:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        sql:
-          type: string
-        referencedTables:
-          type: array
-          items:
-            type: string
-          description: List of table names referenced in the SQL query
-        warnings:
-          type: array
-          items:
-            type: string
-          description: Warning messages (e.g., referenced tables that don't exist)
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-      required:
-        - id
-        - name
-        - sql
-        - referencedTables
-        - created_at
-        - updated_at
-    CreateQueryRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        sql:
-          type: string
-      required:
-        - name
-        - sql
-    UpdateQueryRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        sql:
-          type: string
-    Document:
+    Notebook:
       type: object
       properties:
         id:
@@ -648,12 +490,12 @@ components:
         - name
         - created_at
         - updated_at
-    DocumentCell:
+    NotebookCell:
       type: object
       properties:
         id:
           type: string
-        document_id:
+        notebook_id:
           type: string
         cell_index:
           type: integer
@@ -674,11 +516,11 @@ components:
           format: date-time
       required:
         - id
-        - document_id
+        - notebook_id
         - cell_index
         - cell_type
         - created_at
-    DocumentWithCells:
+    NotebookWithCells:
       type: object
       properties:
         id:
@@ -691,7 +533,7 @@ components:
         cells:
           type: array
           items:
-            $ref: '#/components/schemas/DocumentCell'
+            $ref: '#/components/schemas/NotebookCell'
         created_at:
           type: string
           format: date-time
@@ -704,22 +546,50 @@ components:
         - cells
         - created_at
         - updated_at
-    CreateDocumentRequest:
+    CreateNotebookRequest:
       type: object
       properties:
         name:
           type: string
         markdown:
           type: string
+        cells:
+          type: array
+          items:
+            type: object
+            properties:
+              cell_type:
+                type: string
+                enum: [sql, markdown]
+              sql_text:
+                type: string
+              markdown_text:
+                type: string
+              chart_config:
+                type: string
       required:
         - name
-    UpdateDocumentRequest:
+    UpdateNotebookRequest:
       type: object
       properties:
         name:
           type: string
         markdown:
           type: string
+        cells:
+          type: array
+          items:
+            type: object
+            properties:
+              cell_type:
+                type: string
+                enum: [sql, markdown]
+              sql_text:
+                type: string
+              markdown_text:
+                type: string
+              chart_config:
+                type: string
     ExportRequest:
       type: object
       properties:

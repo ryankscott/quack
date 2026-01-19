@@ -3,11 +3,11 @@ import fs from 'fs/promises';
 import dbConnection from '../db/connection.js';
 import { generateFileId } from '../utils/csv.js';
 import {
-  getDocumentWithCells,
-  Document,
-  DocumentCell,
-  DocumentWithCells,
-} from './documentService.js';
+  getNotebookWithCells,
+  Notebook,
+  NotebookCell,
+  NotebookWithCells,
+} from './notebookService.js';
 
 const EXPORT_DIR = path.join(process.cwd(), 'packages', 'backend', 'data', 'exports');
 
@@ -23,9 +23,9 @@ async function ensureExportDir(): Promise<void> {
 }
 
 /**
- * Import a document from a .quackdb file
+ * Import a notebook from a .quackdb file
  */
-export async function importDocument(fileBuffer: Buffer): Promise<DocumentWithCells | null> {
+export async function importNotebook(fileBuffer: Buffer): Promise<NotebookWithCells | null> {
   // Save uploaded file temporarily
   await ensureExportDir();
   const tempPath = path.join(EXPORT_DIR, `temp_${generateFileId()}.quackdb`);
@@ -35,42 +35,44 @@ export async function importDocument(fileBuffer: Buffer): Promise<DocumentWithCe
     // ATTACH the import database
     await dbConnection.run(`ATTACH '${tempPath}' AS import;`);
 
-    // Get document from import database
-    const importedDocs = await dbConnection.query<Document>('SELECT * FROM import._documents;');
+    // Get notebook from import database
+    const importedNotebooks = await dbConnection.query<Notebook>(
+      'SELECT * FROM import._notebooks;'
+    );
 
-    if (importedDocs.length === 0) {
+    if (importedNotebooks.length === 0) {
       await dbConnection.run(`DETACH import;`);
       return null;
     }
 
-    const importedDoc = importedDocs[0];
-    if (!importedDoc) {
+    const importedNotebook = importedNotebooks[0];
+    if (!importedNotebook) {
       await dbConnection.run(`DETACH import;`);
       return null;
     }
-    const newDocId = generateFileId();
+    const newNotebookId = generateFileId();
 
-    // Insert document with new ID
+    // Insert notebook with new ID
     await dbConnection.run(
-      'INSERT INTO _documents (id, name, markdown) VALUES (?, ?, ?)',
-      newDocId,
-      importedDoc.name,
-      importedDoc.markdown
+      'INSERT INTO _notebooks (id, name, markdown) VALUES (?, ?, ?)',
+      newNotebookId,
+      importedNotebook.name,
+      importedNotebook.markdown
     );
 
     // Insert cells
-    const importedCells = await dbConnection.query<DocumentCell>(
-      'SELECT * FROM import._document_cells ORDER BY cell_index ASC;'
+    const importedCells = await dbConnection.query<NotebookCell>(
+      'SELECT * FROM import._notebook_cells ORDER BY cell_index ASC;'
     );
 
     for (const cell of importedCells) {
       const cellId = generateFileId();
       await dbConnection.run(
-        `INSERT INTO _document_cells 
-           (id, document_id, cell_index, cell_type, sql_text, markdown_text, chart_config)
+        `INSERT INTO _notebook_cells 
+           (id, notebook_id, cell_index, cell_type, sql_text, markdown_text, chart_config)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
         cellId,
-        newDocId,
+        newNotebookId,
         cell.cell_index,
         cell.cell_type,
         cell.sql_text,
@@ -123,8 +125,8 @@ export async function importDocument(fileBuffer: Buffer): Promise<DocumentWithCe
     // DETACH import database
     await dbConnection.run(`DETACH import;`);
 
-    // Return the imported document
-    return getDocumentWithCells(newDocId);
+    // Return the imported notebook
+    return getNotebookWithCells(newNotebookId);
   } finally {
     // Clean up temporary file
     try {

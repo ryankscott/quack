@@ -1,12 +1,10 @@
 import { useEffect } from 'react';
-import { toast } from 'sonner';
 import { SQLCellHeader } from './SQLCellHeader';
 import { SQLCellEditor } from './SQLCellEditor';
 import { SQLCellError } from './SQLCellError';
 import { SQLCellResults } from './SQLCellResults';
 import { Collapsible, CollapsibleContent } from './ui/collapsible';
 import { useQueryExecution } from '@/hooks/useQuery';
-import { useCreateQuery, useUpdateQuery, type SavedQuery } from '@/hooks/useQueries';
 import { useTables } from '@/hooks/useTables';
 import type { CellState } from '@/hooks/useCellManager';
 import { getDefaultChartConfig } from '@/lib/chart-config';
@@ -19,8 +17,6 @@ interface SQLCellProps {
   onRemove: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
-  initialQuery?: SavedQuery;
-  onQuerySaved?: (query: SavedQuery) => void;
 }
 
 export function SQLCell({
@@ -31,12 +27,8 @@ export function SQLCell({
   onRemove,
   onMoveUp,
   onMoveDown,
-  initialQuery,
-  onQuerySaved,
 }: SQLCellProps) {
   const queryMutation = useQueryExecution();
-  const createQueryMutation = useCreateQuery();
-  const updateQueryMutation = useUpdateQuery();
   const { data: tablesData } = useTables();
 
   // Extract table names for autocomplete
@@ -47,17 +39,6 @@ export function SQLCell({
       onUpdate({ chartConfig: getDefaultChartConfig(cell.result) });
     }
   }, [cell.result]);
-
-  useEffect(() => {
-    if (initialQuery) {
-      onUpdate({
-        sql: initialQuery.sql,
-        queryName: initialQuery.name,
-        savedQueryId: initialQuery.id,
-        isDirty: false,
-      });
-    }
-  }, [initialQuery]);
 
   useEffect(() => {
     if (queryMutation.data && !cell.result) {
@@ -85,65 +66,27 @@ export function SQLCell({
     );
   };
 
-  const handleSave = async () => {
-    if (!cell.sql.trim() || !cell.queryName.trim()) {
-      toast.warning('Please provide both a query name and SQL code');
-      return;
-    }
-
-    try {
-      if (cell.savedQueryId) {
-        const updated = await updateQueryMutation.mutateAsync({
-          id: cell.savedQueryId,
-          request: { name: cell.queryName, sql: cell.sql },
-        });
-        onUpdate({ isDirty: false });
-        onQuerySaved?.(updated);
-      } else {
-        const created = await createQueryMutation.mutateAsync({
-          name: cell.queryName,
-          sql: cell.sql,
-        });
-        onUpdate({ savedQueryId: created.id, isDirty: false });
-        onQuerySaved?.(created);
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to save query: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-  };
-
   return (
     <div className="flex flex-col h-auto min-w-0 border border-quack-dark border-opacity-10 rounded-lg bg-white mb-4 max-w-6xl">
       <SQLCellHeader
         cellIndex={cellIndex}
         totalCells={totalCells}
         isExecuting={cell.isExecuting}
-        isDirty={cell.isDirty}
-        isEditorCollapsed={cell.isEditorCollapsed}
-        isPreviewCollapsed={cell.isPreviewCollapsed}
-        hasResults={!!cell.result}
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         onRemove={onRemove}
-        onToggleEditor={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}
-        onTogglePreview={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
       />
 
       <Collapsible open={!cell.isEditorCollapsed}>
         <CollapsibleContent>
           <SQLCellEditor
             sql={cell.sql}
-            queryName={cell.queryName}
             tableNames={tableNames}
             isExecuting={cell.isExecuting}
-            isSaving={createQueryMutation.isPending || updateQueryMutation.isPending}
-            savedQueryId={cell.savedQueryId}
-            onSqlChange={(sql) => onUpdate({ sql, isDirty: true })}
-            onQueryNameChange={(queryName) => onUpdate({ queryName, isDirty: true })}
+            isCollapsed={cell.isEditorCollapsed}
+            onSqlChange={(sql) => onUpdate({ sql })}
             onExecute={handleExecute}
-            onSave={handleSave}
+            onToggleCollapse={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}
           />
         </CollapsibleContent>
       </Collapsible>
@@ -156,7 +99,9 @@ export function SQLCell({
             <SQLCellResults
               result={cell.result}
               chartConfig={cell.chartConfig || null}
+              isCollapsed={cell.isPreviewCollapsed}
               onChartConfigChange={(config) => onUpdate({ chartConfig: config })}
+              onToggleCollapse={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
             />
           </CollapsibleContent>
         </Collapsible>

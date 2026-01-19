@@ -1,56 +1,48 @@
 import { SQLEditor } from './SQLEditor';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface SQLCellEditorProps {
   sql: string;
-  queryName: string;
   tableNames: string[];
   isExecuting: boolean;
-  isSaving: boolean;
-  savedQueryId?: string;
+  isCollapsed?: boolean;
   onSqlChange: (sql: string) => void;
-  onQueryNameChange: (name: string) => void;
   onExecute: () => void;
-  onSave: () => void;
+  onToggleCollapse?: () => void;
 }
 
 /**
- * Editor section of SQL cell with query name input, SQL editor, and action buttons
+ * Editor section of SQL cell with SQL editor and execute button
  */
 export function SQLCellEditor({
   sql,
-  queryName,
   tableNames,
   isExecuting,
-  isSaving,
-  savedQueryId,
+  isCollapsed,
   onSqlChange,
-  onQueryNameChange,
   onExecute,
-  onSave,
+  onToggleCollapse,
 }: SQLCellEditorProps) {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3 flex-1">
-          <Input
-            type="text"
-            value={queryName}
-            onChange={(e) => onQueryNameChange(e.target.value)}
-            placeholder="Query name..."
-            className="text-sm font-semibold"
-          />
+        <div className="text-xs uppercase text-quack-dark text-opacity-60 font-semibold">
+          Editor
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            onClick={onSave}
-            disabled={!sql.trim() || !queryName.trim() || isSaving}
-            variant="outline"
-            size="sm"
-          >
-            {isSaving ? 'Saving...' : savedQueryId ? 'Update' : 'Save'}
-          </Button>
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={onToggleCollapse}
+              title={isCollapsed ? 'Show editor' : 'Hide editor'}
+            >
+              {isCollapsed ? <EyeOff size={14} /> : <Eye size={14} />}
+              <span className="ml-1 text-xs">{isCollapsed ? 'Show' : 'Hide'}</span>
+            </Button>
+          )}
           <Button onClick={onExecute} disabled={!sql.trim() || isExecuting} size="sm">
             {isExecuting ? (
               <>

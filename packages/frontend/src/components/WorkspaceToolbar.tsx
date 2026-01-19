@@ -2,7 +2,7 @@ import { Plus, DatabaseZap, NotebookText } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
-import { DocumentActions } from './DocumentActions';
+import { NotebookActions } from './NotebookActions';
 
 interface WorkspaceToolbarProps {
   documentName: string;
@@ -19,7 +19,7 @@ interface WorkspaceToolbarProps {
 }
 
 /**
- * Toolbar section of workspace with document controls and mode switcher
+ * Toolbar section of workspace with notebook controls and mode switcher
  */
 export function WorkspaceToolbar({
   documentName,
@@ -48,7 +48,7 @@ export function WorkspaceToolbar({
             className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Show Saved Queries
+            Show Notebooks
           </Button>
         )}
 
@@ -56,7 +56,7 @@ export function WorkspaceToolbar({
           <Input
             value={documentName}
             onChange={(e) => onDocumentNameChange(e.target.value)}
-            placeholder="Document name"
+            placeholder="Notebook name"
             disabled={isPreviewMode}
             className="text-sm"
           />
@@ -70,7 +70,7 @@ export function WorkspaceToolbar({
           </Button>
         </div>
 
-        <DocumentActions documentId={documentId} variant="toolbar" className="flex-wrap" />
+        <NotebookActions notebookId={documentId} variant="toolbar" className="flex-wrap" />
 
         <div className="flex-1" />
 

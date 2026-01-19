@@ -1,7 +1,7 @@
 import dbConnection from './connection.js';
 
 export async function initializeSchema(): Promise<void> {
-  // Create metadata tables for tracking files, tables, and queries
+  // Create metadata tables for tracking files and tables
   await dbConnection.run(`
     CREATE TABLE IF NOT EXISTS _files (
       id TEXT PRIMARY KEY,
@@ -21,29 +21,9 @@ export async function initializeSchema(): Promise<void> {
     );
   `);
 
+  // Create notebooks table to store notebook metadata and markdown content
   await dbConnection.run(`
-    CREATE TABLE IF NOT EXISTS _queries (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      sql TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // Create junction table to track which tables each query references
-  await dbConnection.run(`
-    CREATE TABLE IF NOT EXISTS _query_tables (
-      query_id TEXT NOT NULL,
-      table_name TEXT NOT NULL,
-      PRIMARY KEY (query_id, table_name),
-      FOREIGN KEY (query_id) REFERENCES _queries(id)
-    );
-  `);
-
-  // Create documents table to store document metadata and markdown content
-  await dbConnection.run(`
-    CREATE TABLE IF NOT EXISTS _documents (
+    CREATE TABLE IF NOT EXISTS _notebooks (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       markdown TEXT,
@@ -52,18 +32,18 @@ export async function initializeSchema(): Promise<void> {
     );
   `);
 
-  // Create document cells to store individual cell configurations
+  // Create notebook cells to store individual cell configurations
   await dbConnection.run(`
-    CREATE TABLE IF NOT EXISTS _document_cells (
+    CREATE TABLE IF NOT EXISTS _notebook_cells (
       id TEXT PRIMARY KEY,
-      document_id TEXT NOT NULL,
+      notebook_id TEXT NOT NULL,
       cell_index INTEGER NOT NULL,
       cell_type TEXT NOT NULL,
       sql_text TEXT,
       markdown_text TEXT,
       chart_config TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (document_id) REFERENCES _documents(id)
+      FOREIGN KEY (notebook_id) REFERENCES _notebooks(id)
     );
   `);
 }

@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import dbConnection from '../db/connection.js';
 import { generateFileId } from '../utils/csv.js';
 import { extractTableNamesFromSQL } from '../utils/query.js';
-import { getDocumentWithCells, DocumentWithCells } from './documentService.js';
+import { getNotebookWithCells, NotebookWithCells } from './notebookService.js';
 
 const EXPORT_DIR = path.join(process.cwd(), 'packages', 'backend', 'data', 'exports');
 
@@ -21,15 +21,15 @@ async function ensureExportDir(): Promise<void> {
 export type DataMode = 'none' | 'query-results' | 'referenced-tables' | 'full-db';
 
 /**
- * Export a document to a .quackdb file with optional data
+ * Export a notebook to a .quackdb file with optional data
  */
-export async function exportDocument(
-  docId: string,
+export async function exportNotebook(
+  notebookId: string,
   dataMode: DataMode
-): Promise<{ path: string; doc: DocumentWithCells } | null> {
-  // Get document
-  const doc = await getDocumentWithCells(docId);
-  if (!doc) {
+): Promise<{ path: string; notebook: NotebookWithCells } | null> {
+  // Get notebook
+  const notebook = await getNotebookWithCells(notebookId);
+  if (!notebook) {
     return null;
   }
 
@@ -45,18 +45,18 @@ export async function exportDocument(
     // Create tables in export database
     await dbConnection.run(
       `
-      CREATE TABLE export._documents AS 
-      SELECT * FROM _documents WHERE id = ?;
+      CREATE TABLE export._notebooks AS 
+      SELECT * FROM _notebooks WHERE id = ?;
     `,
-      docId
+      notebookId
     );
 
     await dbConnection.run(
       `
-      CREATE TABLE export._document_cells AS 
-      SELECT * FROM _document_cells WHERE document_id = ?;
+      CREATE TABLE export._notebook_cells AS 
+      SELECT * FROM _notebook_cells WHERE notebook_id = ?;
     `,
-      docId
+      notebookId
     );
 
     // Copy data based on dataMode
@@ -75,7 +75,7 @@ export async function exportDocument(
       // For each cell, extract table names and copy referenced tables
       const tableNamesToExport = new Set<string>();
 
-      for (const cell of doc.cells) {
+      for (const cell of notebook.cells) {
         if (cell.cell_type === 'sql' && cell.sql_text) {
           const tables = extractTableNamesFromSQL(cell.sql_text);
           tables.forEach((t) => tableNamesToExport.add(t));
@@ -103,14 +103,6 @@ export async function exportDocument(
 
       await dbConnection.run(`
         CREATE TABLE export._tables AS SELECT * FROM _tables;
-      `);
-
-      await dbConnection.run(`
-        CREATE TABLE export._queries AS SELECT * FROM _queries;
-      `);
-
-      await dbConnection.run(`
-        CREATE TABLE export._query_tables AS SELECT * FROM _query_tables;
       `);
 
       // Copy all user tables using SHOW TABLES
@@ -146,7 +138,7 @@ export async function exportDocument(
     // DETACH export database
     await dbConnection.run(`DETACH export;`);
 
-    return { path: exportPath, doc };
+    return { path: exportPath, notebook };
   } catch (error) {
     // Clean up export file if something went wrong
     try {

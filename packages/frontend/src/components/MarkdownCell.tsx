@@ -1,6 +1,6 @@
 import type { CellState } from '@/hooks/useCellManager';
 import { Button } from './ui/button';
-import { ChevronDown, ChevronUp, ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, EyeOff, Trash2Icon } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from './ui/collapsible';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -28,57 +28,67 @@ export function MarkdownCell({
 
   return (
     <div className="bg-white border border-quack-dark border-opacity-10 rounded-lg shadow-sm mb-6">
-      <div className="flex items-center justify-between p-3 border-b border-quack-dark border-opacity-10">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-quack-dark">Markdown Cell</span>
+      <div className="flex items-center justify-between p-2 border-b border-quack-dark border-opacity-10 bg-quack-gold bg-opacity-5">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-2 px-2 items-center">
+            <p className="text-xs text-quack-dark text-opacity-60 font-mono">
+              Cell {cellIndex + 1}
+            </p>
+          </div>
+        </div>
 
-          {/* Collapse toggle buttons */}
-          <div className="flex items-center gap-0.5 border-l border-quack-dark border-opacity-10 pl-2">
+        {/* Right side: Move up/down and delete */}
+        <div className="flex items-center gap-1">
+          {cellIndex > 0 && (
             <Button
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0"
-              onClick={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}
-              title={cell.isEditorCollapsed ? 'Show editor' : 'Hide editor'}
+              onClick={onMoveUp}
+              title="Move up"
             >
-              {cell.isEditorCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-            </Button>
-            {hasPreview && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                onClick={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
-                title={cell.isPreviewCollapsed ? 'Show preview' : 'Hide preview'}
-              >
-                {cell.isPreviewCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {onMoveUp && cellIndex > 0 && (
-            <Button variant="ghost" onClick={onMoveUp} title="Move up">
-              <ChevronUp size={18} />
+              <ChevronUp size={16} />
             </Button>
           )}
-          {onMoveDown && cellIndex < totalCells - 1 && (
-            <Button variant="ghost" onClick={onMoveDown} title="Move down">
-              <ChevronDown size={18} />
+          {cellIndex < totalCells - 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={onMoveDown}
+              title="Move down"
+            >
+              <ChevronDown size={16} />
             </Button>
           )}
           <Button
             variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:text-red-600"
             onClick={onRemove}
-            className="text-red-500 hover:text-red-700"
             title="Remove cell"
           >
-            <Trash2 size={18} />
+            <Trash2Icon size={16} />
           </Button>
         </div>
       </div>
       <div className="p-4 space-y-4">
         <Collapsible open={!cell.isEditorCollapsed}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs uppercase text-quack-dark text-opacity-60 font-semibold">
+              Editor
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}
+              title={cell.isEditorCollapsed ? 'Show editor' : 'Hide editor'}
+            >
+              {cell.isEditorCollapsed ? <EyeOff size={14} /> : <Eye size={14} />}
+              <span className="ml-1 text-xs">{cell.isEditorCollapsed ? 'Show' : 'Hide'}</span>
+            </Button>
+          </div>
           <CollapsibleContent>
             <textarea
               value={cell.markdown}
@@ -91,11 +101,23 @@ export function MarkdownCell({
 
         {hasPreview && (
           <Collapsible open={!cell.isPreviewCollapsed}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs uppercase text-quack-dark text-opacity-60 font-semibold">
+                Preview
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7"
+                onClick={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
+                title={cell.isPreviewCollapsed ? 'Show preview' : 'Hide preview'}
+              >
+                {cell.isPreviewCollapsed ? <EyeOff size={14} /> : <Eye size={14} />}
+                <span className="ml-1 text-xs">{cell.isPreviewCollapsed ? 'Show' : 'Hide'}</span>
+              </Button>
+            </div>
             <CollapsibleContent>
               <div className="border border-quack-dark border-opacity-10 rounded-md p-3 bg-quack-gold bg-opacity-5">
-                <div className="text-xs uppercase text-quack-dark text-opacity-60 mb-2">
-                  Preview
-                </div>
                 <div className="markdown-preview">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{cell.markdown}</ReactMarkdown>
                 </div>

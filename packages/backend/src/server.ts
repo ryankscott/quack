@@ -6,8 +6,7 @@ import { initializeSchema } from './db/schema.js';
 import { filesRoutes } from './routes/files.js';
 import { tablesRoutes } from './routes/tables.js';
 import { queryRoutes } from './routes/query.js';
-import { queriesRoutes } from './routes/queries.js';
-import { documentsRoutes } from './routes/documents.js';
+import { notebooksRoutes } from './routes/notebooks.js';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -68,8 +67,7 @@ async function buildServer() {
   await fastify.register(filesRoutes);
   await fastify.register(tablesRoutes);
   await fastify.register(queryRoutes);
-  await fastify.register(queriesRoutes);
-  await fastify.register(documentsRoutes);
+  await fastify.register(notebooksRoutes);
 
   return fastify;
 }

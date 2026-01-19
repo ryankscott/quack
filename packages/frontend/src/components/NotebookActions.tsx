@@ -1,35 +1,35 @@
 import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useExportDocument, useImportDocument, DataMode } from '../hooks/useDocuments';
+import { useExportNotebook, useImportNotebook, DataMode } from '../hooks/useNotebooks';
 
-interface DocumentActionsProps {
-  documentId: string | null;
+interface NotebookActionsProps {
+  notebookId: string | null;
   variant?: 'panel' | 'toolbar';
   className?: string;
 }
 
-export function DocumentActions({
-  documentId,
+export function NotebookActions({
+  notebookId,
   variant = 'panel',
   className,
-}: DocumentActionsProps) {
+}: NotebookActionsProps) {
   const [dataMode, setDataMode] = useState<DataMode>('query-results');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const exportMutation = useExportDocument();
-  const importMutation = useImportDocument();
+  const exportMutation = useExportNotebook();
+  const importMutation = useImportNotebook();
 
   const handleExport = async () => {
-    if (!documentId) {
-      toast.error('Please select or create a document first');
+    if (!notebookId) {
+      toast.error('Please select or create a notebook first');
       return;
     }
 
     setIsExporting(true);
     try {
       const blob = await exportMutation.mutateAsync({
-        documentId,
+        notebookId,
         dataMode,
       });
 
@@ -37,7 +37,7 @@ export function DocumentActions({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `document_${new Date().getTime()}.quackdb`;
+      a.download = `notebook_${new Date().getTime()}.quackdb`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -60,7 +60,7 @@ export function DocumentActions({
     setIsImporting(true);
     try {
       await importMutation.mutateAsync(file);
-      toast.success('Document imported successfully');
+      toast.success('Notebook imported successfully');
     } catch (error) {
       toast.error(`Import failed: ${(error as Error).message}`);
     } finally {
@@ -92,7 +92,7 @@ export function DocumentActions({
         </select>
         <button
           onClick={handleExport}
-          disabled={isExporting || !documentId}
+          disabled={isExporting || !notebookId}
           className="btn-secondary text-sm"
         >
           {isExporting ? 'Exporting...' : 'Export'}
@@ -120,7 +120,7 @@ export function DocumentActions({
       className={`border-t border-quack-dark border-opacity-10 p-4 space-y-4 ${className ?? ''}`.trim()}
     >
       <div className="space-y-2">
-        <h3 className="font-semibold text-sm">Export Document</h3>
+        <h3 className="font-semibold text-sm">Export Notebook</h3>
         <div className="flex items-center gap-2">
           <select
             value={dataMode}
@@ -135,19 +135,19 @@ export function DocumentActions({
           </select>
           <button
             onClick={handleExport}
-            disabled={isExporting || !documentId}
+            disabled={isExporting || !notebookId}
             className="btn-primary text-sm"
           >
             {isExporting ? 'Exporting...' : 'Export'}
           </button>
         </div>
         <p className="text-xs text-quack-dark text-opacity-60">
-          Exports document with cells and selected data as a portable .quackdb file
+          Exports notebook with cells and selected data as a portable .quackdb file
         </p>
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-semibold text-sm">Import Document</h3>
+        <h3 className="font-semibold text-sm">Import Notebook</h3>
         <button
           onClick={handleImportClick}
           disabled={isImporting}
@@ -163,7 +163,7 @@ export function DocumentActions({
           className="hidden"
         />
         <p className="text-xs text-quack-dark text-opacity-60">
-          Import a document from a previously exported .quackdb file
+          Import a notebook from a previously exported .quackdb file
         </p>
       </div>
     </div>
