@@ -1,7 +1,10 @@
-import { SQLEditor } from './SQLEditor';
+import { useRef } from 'react';
+import { SQLEditor, type SQLEditorRef } from './SQLEditor';
+import { TemplatePicker } from './TemplatePicker';
 import { Button } from './ui/button';
 import { Eye, EyeOff } from 'lucide-react';
 import { CollapsibleContent } from './ui/collapsible';
+import type { SQLTemplate } from '@/lib/sql-templates';
 
 interface SQLCellEditorProps {
   sql: string;
@@ -25,6 +28,16 @@ export function SQLCellEditor({
   onExecute,
   onToggleCollapse,
 }: SQLCellEditorProps) {
+  const editorRef = useRef<SQLEditorRef>(null);
+
+  const handleTemplateSelect = (template: SQLTemplate) => {
+    editorRef.current?.insertSnippet(template.template);
+    // Focus the editor after a short delay to allow the dropdown to fully close
+    setTimeout(() => {
+      editorRef.current?.focus();
+    }, 50);
+  };
+
   return (
     <>
       <div className="flex items-center justify-between mb-2">
@@ -32,6 +45,7 @@ export function SQLCellEditor({
           Editor
         </div>
         <div className="flex items-center gap-2">
+          <TemplatePicker onSelect={handleTemplateSelect} />
           {onToggleCollapse && (
             <Button
               variant="ghost"
@@ -62,6 +76,7 @@ export function SQLCellEditor({
       <CollapsibleContent>
         <div className="border border-quack-dark border-opacity-20 rounded overflow-hidden">
           <SQLEditor
+            ref={editorRef}
             value={sql}
             onChange={onSqlChange}
             onExecute={onExecute}
