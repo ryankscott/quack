@@ -1,10 +1,13 @@
 import { ChevronUp, ChevronDown, Trash2Icon } from 'lucide-react';
 import { Button } from './ui/button';
+import { TableSelector } from './TableSelector';
 
 interface SQLCellHeaderProps {
   cellIndex: number;
   totalCells: number;
   isExecuting: boolean;
+  selectedTables: string[];
+  onTablesChange: (tables: string[]) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onRemove: () => void;
@@ -17,19 +20,25 @@ export function SQLCellHeader({
   cellIndex,
   totalCells,
   isExecuting,
+  selectedTables,
+  onTablesChange,
   onMoveUp,
   onMoveDown,
   onRemove,
 }: SQLCellHeaderProps) {
   return (
     <div className="flex row justify-between align-center gap-2 p-2 w-full border-b border-quack-dark border-opacity-10 bg-quack-gold bg-opacity-5">
-      <div className='flex gap-2 items-center'>
+      <div className='flex gap-2 items-center flex-wrap'>
         <div className='flex gap-2 px-2 items-center'>
           <p className="text-xs text-quack-dark text-opacity-60 font-mono">
             Cell {cellIndex + 1}
           </p>
           {isExecuting && <p className="text-xs text-quack-orange">Executing...</p>}
         </div>
+        <TableSelector
+          selectedTables={selectedTables}
+          onTablesChange={onTablesChange}
+        />
       </div>
 
       {/* Right side: Move up/down and delete */}

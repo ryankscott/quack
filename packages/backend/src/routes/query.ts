@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import dbConnection from '../db/connection.js';
 import { formatQueryResult } from '../utils/query.js';
 import { QUERY_CONFIG } from '../config.js';
+import { validateTableAccess } from '../utils/query-validator.js';
 
 class QueryTimeoutError extends Error {
   constructor(message: string) {
@@ -33,16 +34,24 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 }
 
 export async function queryRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.post<{ Body: { sql?: string; limit?: number } }>(
+  fastify.post<{ Body: { sql?: string; limit?: number; allowed_tables?: string[] } }>(
     '/query/execute',
     async (request, reply) => {
-      const { sql, limit } = request.body || {};
+      const { sql, limit, allowed_tables } = request.body || {};
 
       if (!sql || typeof sql !== 'string' || !sql.trim()) {
         return reply.status(400).type('application/json').send({ error: 'SQL is required' });
       }
 
       const sanitizedSql = sanitizeSql(sql);
+
+      // Validate table access if allowed_tables is provided
+      if (allowed_tables && Array.isArray(allowed_tables)) {
+        const validation = validateTableAccess(sanitizedSql, allowed_tables);
+        if (!validation.valid) {
+          return reply.status(403).type('application/json').send({ error: validation.error });
+        }
+      }
       const requestedLimit = Number(limit ?? QUERY_CONFIG.DEFAULT_LIMIT);
       const limitValue = Number.isFinite(requestedLimit)
         ? Math.min(Math.max(requestedLimit, 1), QUERY_CONFIG.MAX_LIMIT)

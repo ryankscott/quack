@@ -2,8 +2,16 @@ import { useMemo, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { CellState } from '@/hooks/useCellManager';
-import { ChartViewer } from './ChartViewer';
+import RechartsChart from './RechartsChart';
 import { generateChartImage } from '@/lib/chartImageGenerator';
+import { generateMarkdownFromCells } from '@/lib/markdown-export';
+
+// Custom components to allow data URLs in images
+const markdownComponents = {
+  img: ({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    <img src={src} alt={alt} {...props} style={{ maxWidth: '100%' }} />
+  ),
+};
 
 interface WorkspacePreviewProps {
   cells: CellState[];
@@ -17,23 +25,38 @@ export function WorkspacePreview({ cells, onChartImagesGenerated }: WorkspacePre
   const [generatingImages, setGeneratingImages] = useState(false);
   const chartRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+
   // Generate chart images lazily when preview is shown
   useEffect(() => {
     const generateImages = async () => {
+      // Only generate images for cells that have displayMode === 'chart'
+      const cellsNeedingImages = cells.filter(
+        (cell) => cell.type === 'sql' && cell.displayMode === 'chart' && cell.chartConfig && cell.result && !cell.chartImageUrl
+      );
+
+      if (cellsNeedingImages.length === 0) {
+        return;
+      }
+
       setGeneratingImages(true);
 
-      for (const cell of cells) {
-        if (cell.type === 'sql' && cell.chartConfig && cell.result && !cell.chartImageUrl) {
-          const chartElement = chartRefs.current.get(cell.id);
-          if (chartElement) {
-            try {
-              // Wait a bit for chart to fully render
-              await new Promise((resolve) => setTimeout(resolve, 500));
-              const imageUrl = await generateChartImage(chartElement);
-              onChartImagesGenerated?.(cell.id, imageUrl);
-            } catch (error) {
-              console.error(`Failed to generate image for cell ${cell.id}:`, error);
+      // Wait for the next frame to ensure refs are set after render
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      // Additional small delay to ensure charts are fully rendered
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      for (const cell of cellsNeedingImages) {
+        const chartElement = chartRefs.current.get(cell.id);
+        if (chartElement) {
+          try {
+            // Wait a bit for chart to fully render
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            const imageUrl = await generateChartImage(chartElement);
+            if (imageUrl && onChartImagesGenerated) {
+              onChartImagesGenerated(cell.id, imageUrl);
             }
+          } catch (error) {
+            console.error(`Failed to generate image for cell ${cell.id}:`, error);
           }
         }
       }
@@ -45,78 +68,31 @@ export function WorkspacePreview({ cells, onChartImagesGenerated }: WorkspacePre
   }, [cells, onChartImagesGenerated]);
 
   const markdownPreview = useMemo(() => {
-    const escapeTableValue = (value: unknown) => {
-      if (value === null || value === undefined) return '';
-      return String(value).replace(/\r?\n/g, '\\n').replace(/\|/g, '\\|');
-    };
-
-    const formatTable = (columns: { name: string }[], rows: unknown[][], maxRows = 50) => {
-      if (!columns.length) return '*(no columns)*';
-
-      const header = `| ${columns.map((col) => escapeTableValue(col.name)).join(' | ')} |`;
-      const divider = `| ${columns.map(() => '---').join(' | ')} |`;
-      const limitedRows = rows.slice(0, maxRows);
-      const body = limitedRows.map(
-        (row) => `| ${columns.map((_, idx) => escapeTableValue(row?.[idx])).join(' | ')} |`
-      );
-
-      if (rows.length > maxRows) {
-        body.push(`| ${columns.map((_, idx) => (idx === 0 ? '… (truncated)' : '')).join(' | ')} |`);
-      }
-
-      return [header, divider, ...body].join('\n');
-    };
-
-    const sections: string[] = [];
-
-    cells.forEach((cell, index) => {
-      if (cell.type === 'markdown') {
-        sections.push(cell.markdown || `<!-- markdown cell ${index + 1} -->`);
-        return;
-      }
-
-      sections.push(`\n\`\`\`sql\n${cell.sql || ''}\n\`\`\`\n`);
-
-      if (cell.error) {
-        sections.push(`\n\`\`\`text\n${cell.error}\n\`\`\`\n`);
-        return;
-      }
-
-      if (cell.result) {
-        sections.push(formatTable(cell.result.columns, cell.result.rows));
-        if (cell.result.truncated) {
-          sections.push(
-            `\n*(Showing ${cell.result.rows.length} of ${cell.result.rowCount} rows)*\n`
-          );
-        }
-
-        // Add chart image if available
-        if (cell.chartImageUrl) {
-          sections.push(`\n![Chart for query ${index + 1}](${cell.chartImageUrl})\n`);
-        }
-      } else {
-        sections.push('*(No results yet)*');
-      }
-    });
-
-    return sections.join('\n\n');
+    // Use shared markdown generation function without title for preview
+    return generateMarkdownFromCells('', cells);
   }, [cells]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
-      {/* Hidden chart rendering area for image generation */}
-      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+      {/* Hidden chart rendering area for image generation - uses fixed size charts */}
+      {/* Using opacity:0 instead of visibility:hidden for html-to-image compatibility */}
+      <div style={{ position: 'fixed', top: 0, left: 0, opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
         {cells.map((cell) => {
-          if (cell.type === 'sql' && cell.chartConfig && cell.result && !cell.chartImageUrl) {
+          // Only render hidden charts for cells with displayMode === 'chart'
+          if (cell.type === 'sql' && cell.displayMode === 'chart' && cell.chartConfig && cell.result && !cell.chartImageUrl) {
             return (
               <div
                 key={cell.id}
                 ref={(el) => {
                   if (el) chartRefs.current.set(cell.id, el);
                 }}
-                style={{ width: '800px', height: '400px' }}
+                style={{ width: '800px', height: '400px', backgroundColor: '#ffffff', padding: '16px' }}
               >
-                <ChartViewer config={cell.chartConfig} result={cell.result} />
+                <RechartsChart
+                  config={cell.chartConfig}
+                  result={cell.result}
+                  fixedSize={{ width: 768, height: 368 }}
+                />
               </div>
             );
           }
@@ -132,7 +108,13 @@ export function WorkspacePreview({ cells, onChartImagesGenerated }: WorkspacePre
           )}
         </div>
         <div className="markdown-preview">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownPreview}</ReactMarkdown>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={markdownComponents}
+            urlTransform={(url) => url}
+          >
+            {markdownPreview}
+          </ReactMarkdown>
         </div>
       </div>
     </div>

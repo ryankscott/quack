@@ -57,15 +57,16 @@ export function WorkspacePage() {
 
   const handleSaveNotebook = async () => {
     if (!currentNotebookId) return;
-    const payload: CreateNotebookRequest = {
-      name: currentNotebookName.trim() || 'Untitled',
-      cells: cells.map((cell) => ({
-        cell_type: cell.type,
-        sql_text: cell.type === 'sql' ? cell.sql : undefined,
-        markdown_text: cell.type === 'markdown' ? cell.markdown : undefined,
-        chart_config: cell.chartConfig ? JSON.stringify(cell.chartConfig) : undefined,
-      })),
-    };
+      const payload: CreateNotebookRequest = {
+        name: currentNotebookName.trim() || 'Untitled',
+        cells: cells.map((cell) => ({
+          cell_type: cell.type,
+          sql_text: cell.type === 'sql' ? cell.sql : undefined,
+          markdown_text: cell.type === 'markdown' ? cell.markdown : undefined,
+          chart_config: cell.chartConfig ? JSON.stringify(cell.chartConfig) : undefined,
+          selected_tables: cell.selectedTables,
+        })),
+      };
 
     await updateNotebookMutation.mutateAsync({
       id: currentNotebookId,
@@ -83,6 +84,7 @@ export function WorkspacePage() {
         markdown: cell.markdown_text || '',
         isExecuting: false,
         chartConfig: cell.chart_config ? JSON.parse(cell.chart_config) : undefined,
+        selectedTables: cell.selected_tables || undefined,
       }));
       setCellsDirectly(loadedCells);
     }
@@ -136,6 +138,7 @@ export function WorkspacePage() {
           isSidebarOpen={isSidebarOpen}
           mode={mode}
           isSaving={updateNotebookMutation.isPending}
+          cells={cells}
           onDocumentNameChange={setCurrentNotebookName}
           onSave={handleSaveNotebook}
           onModeChange={setMode}

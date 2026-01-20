@@ -4,12 +4,15 @@ import { Input } from './ui/input';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { NotebookActions } from './NotebookActions';
 
+import type { CellState } from '@/hooks/useCellManager';
+
 interface WorkspaceToolbarProps {
   documentName: string;
   documentId: string | null;
   isSidebarOpen: boolean;
   mode: 'edit' | 'preview';
   isSaving: boolean;
+  cells: CellState[];
   onDocumentNameChange: (name: string) => void;
   onSave: () => void;
   onModeChange: (mode: 'edit' | 'preview') => void;
@@ -27,6 +30,7 @@ export function WorkspaceToolbar({
   isSidebarOpen,
   mode,
   isSaving,
+  cells,
   onDocumentNameChange,
   onSave,
   onModeChange,
@@ -70,7 +74,7 @@ export function WorkspaceToolbar({
           </Button>
         </div>
 
-        <NotebookActions notebookId={documentId} variant="toolbar" className="flex-wrap" />
+        <NotebookActions notebookId={documentId} cells={cells} notebookName={documentName} variant="toolbar" className="flex-wrap" />
 
         <div className="flex-1" />
 

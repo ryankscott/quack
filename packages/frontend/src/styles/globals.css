@@ -186,6 +186,10 @@
   .markdown-preview blockquote {
     @apply border-l-4 border-quack-gold pl-3 text-quack-dark text-opacity-80;
   }
+
+  .markdown-preview img {
+    @apply max-w-full h-auto rounded border border-quack-dark border-opacity-10 my-4;
+  }
 }
 
 

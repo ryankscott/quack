@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { ResultTable } from './ResultTable';
 import { ChartViewer } from './ChartViewer';
 import { ChartConfigPanel } from './ChartConfig';
 import { Button } from './ui/button';
 import { Eye, EyeOff } from 'lucide-react';
+import { CollapsibleContent } from './ui/collapsible';
 import type { QueryResult } from '@/hooks/useQuery';
 import type { ChartConfig } from '@/lib/chart-config';
 
@@ -11,8 +11,10 @@ interface SQLCellResultsProps {
   result: QueryResult;
   chartConfig: ChartConfig | null;
   isCollapsed?: boolean;
+  displayMode?: 'table' | 'chart';
   onChartConfigChange: (config: ChartConfig) => void;
   onToggleCollapse?: () => void;
+  onDisplayModeChange?: (mode: 'table' | 'chart') => void;
 }
 
 /**
@@ -22,13 +24,15 @@ export function SQLCellResults({
   result, 
   chartConfig, 
   isCollapsed,
+  displayMode = 'table',
   onChartConfigChange,
-  onToggleCollapse 
+  onToggleCollapse,
+  onDisplayModeChange,
 }: SQLCellResultsProps) {
-  const [showChart, setShowChart] = useState(false);
+  const showChart = displayMode === 'chart';
 
   return (
-    <div className="p-4 pt-0">
+    <div className="mt-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <div className="text-xs uppercase text-quack-dark text-opacity-60 font-semibold">
@@ -53,14 +57,14 @@ export function SQLCellResults({
             </Button>
           )}
           <Button
-            onClick={() => setShowChart(false)}
+            onClick={() => onDisplayModeChange?.('table')}
             variant={!showChart ? 'default' : 'outline'}
             size="sm"
           >
             Table
           </Button>
           <Button
-            onClick={() => setShowChart(true)}
+            onClick={() => onDisplayModeChange?.('chart')}
             variant={showChart ? 'default' : 'outline'}
             size="sm"
           >
@@ -69,18 +73,20 @@ export function SQLCellResults({
         </div>
       </div>
 
-      {showChart && chartConfig ? (
-        <div className="space-y-3">
-          <ChartConfigPanel config={chartConfig} result={result} onChange={onChartConfigChange} />
-          <div className="max-h-96 overflow-auto border border-quack-dark border-opacity-10 rounded">
-            <ChartViewer config={chartConfig} result={result} />
+      <CollapsibleContent>
+        {showChart && chartConfig ? (
+          <div className="space-y-3">
+            <ChartConfigPanel config={chartConfig} result={result} onChange={onChartConfigChange} />
+            <div className="max-h-96 overflow-auto border border-quack-dark border-opacity-10 rounded">
+              <ChartViewer config={chartConfig} result={result} />
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="max-h-96 overflow-auto border border-quack-dark border-opacity-10 rounded">
-          <ResultTable result={result} />
-        </div>
-      )}
+        ) : (
+          <div className="max-h-96 overflow-auto border border-quack-dark border-opacity-10 rounded">
+            <ResultTable result={result} />
+          </div>
+        )}
+      </CollapsibleContent>
     </div>
   );
 }

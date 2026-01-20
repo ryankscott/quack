@@ -269,7 +269,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /notebooks/{id}/export:
     post:
-      summary: Export notebook to portable .quackdb file
+      summary: Export notebook as markdown or .quackdb file
       parameters:
         - name: id
           in: path
@@ -286,12 +286,17 @@ paths:
         '200':
           description: Export successful
           content:
+            text/markdown:
+              schema:
+                type: string
+              description: Markdown file when format=markdown
             application/octet-stream:
               schema:
                 type: string
                 format: binary
+              description: .quackdb file when format=quackdb
         '400':
-          description: Invalid input or dataMode
+          description: Invalid input or format
           content:
             application/json:
               schema:
@@ -439,6 +444,10 @@ components:
           type: integer
           default: 1000
           maximum: 10000
+        allowed_tables:
+          type: array
+          items:
+            type: string
       required:
         - sql
     QueryResultColumn:
@@ -511,6 +520,11 @@ components:
         chart_config:
           type: string
           nullable: true
+        selected_tables:
+          type: array
+          items:
+            type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -567,6 +581,10 @@ components:
                 type: string
               chart_config:
                 type: string
+              selected_tables:
+                type: array
+                items:
+                  type: string
       required:
         - name
     UpdateNotebookRequest:
@@ -590,15 +608,25 @@ components:
                 type: string
               chart_config:
                 type: string
+              selected_tables:
+                type: array
+                items:
+                  type: string
     ExportRequest:
       type: object
       properties:
-        dataMode:
+        format:
           type: string
-          enum: [none, query-results, referenced-tables, full-db]
-          default: query-results
+          enum: [markdown, quackdb]
+          default: quackdb
+        chartImages:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of cell ID to base64 PNG image data URL (for markdown export)
+          nullable: true
       required:
-        - dataMode
+        - format
     ErrorResponse:
       type: object
       properties:

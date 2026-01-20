@@ -17,11 +17,24 @@ export interface NotebookCell {
   sql_text: string | null;
   markdown_text: string | null;
   chart_config: string | null;
+  selected_tables: string | null; // JSON string in DB
+  created_at: string;
+}
+
+export interface NotebookCellResponse {
+  id: string;
+  notebook_id: string;
+  cell_index: number;
+  cell_type: string;
+  sql_text: string | null;
+  markdown_text: string | null;
+  chart_config: string | null;
+  selected_tables: string[] | null; // Parsed array in API response
   created_at: string;
 }
 
 export interface NotebookWithCells extends Notebook {
-  cells: NotebookCell[];
+  cells: NotebookCellResponse[];
 }
 
 export interface CreateNotebookRequest {
@@ -32,6 +45,7 @@ export interface CreateNotebookRequest {
     sql_text?: string;
     markdown_text?: string;
     chart_config?: string;
+    selected_tables?: string[];
   }>;
 }
 
@@ -43,6 +57,7 @@ export interface UpdateNotebookRequest {
     sql_text?: string;
     markdown_text?: string;
     chart_config?: string;
+    selected_tables?: string[];
   }>;
 }
 
@@ -69,9 +84,25 @@ export async function getNotebookWithCells(
     notebookId
   );
 
+  // Parse selected_tables JSON strings to arrays for API response
+  const cellsWithParsedTables: NotebookCellResponse[] = cells.map((cell) => {
+    let selectedTables: string[] | null = null;
+    if (cell.selected_tables) {
+      try {
+        selectedTables = JSON.parse(cell.selected_tables);
+      } catch {
+        selectedTables = null;
+      }
+    }
+    return {
+      ...cell,
+      selected_tables: selectedTables,
+    };
+  });
+
   return {
     ...notebook,
-    cells,
+    cells: cellsWithParsedTables,
   };
 }
 
@@ -97,17 +128,21 @@ export async function createNotebook(
       const cell = cells[i];
       if (!cell) continue;
       const cellId = generateFileId();
+      const selectedTablesJson = cell.selected_tables && cell.selected_tables.length > 0
+        ? JSON.stringify(cell.selected_tables)
+        : null;
       await dbConnection.run(
         `INSERT INTO _notebook_cells 
-           (id, notebook_id, cell_index, cell_type, sql_text, markdown_text, chart_config)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+           (id, notebook_id, cell_index, cell_type, sql_text, markdown_text, chart_config, selected_tables)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         cellId,
         notebookId,
         i,
         cell.cell_type,
         cell.sql_text || null,
         cell.markdown_text || null,
-        cell.chart_config || null
+        cell.chart_config || null,
+        selectedTablesJson
       );
     }
   }
@@ -161,17 +196,21 @@ export async function updateNotebook(
       const cell = cells[i];
       if (!cell) continue;
       const cellId = generateFileId();
+      const selectedTablesJson = cell.selected_tables && cell.selected_tables.length > 0
+        ? JSON.stringify(cell.selected_tables)
+        : null;
       await dbConnection.run(
         `INSERT INTO _notebook_cells 
-         (id, notebook_id, cell_index, cell_type, sql_text, markdown_text, chart_config)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (id, notebook_id, cell_index, cell_type, sql_text, markdown_text, chart_config, selected_tables)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         cellId,
         notebookId,
         i,
         cell.cell_type,
         cell.sql_text || null,
         cell.markdown_text || null,
-        cell.chart_config || null
+        cell.chart_config || null,
+        selectedTablesJson
       );
     }
   }

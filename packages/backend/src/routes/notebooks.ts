@@ -10,11 +10,12 @@ import {
   type Notebook,
   type UpdateNotebookRequest,
 } from '../services/notebookService.js';
-import { exportNotebook, type DataMode } from '../services/exportService.js';
+import { exportNotebook, exportNotebookAsMarkdown, type ExportFormat } from '../services/exportService.js';
 import { importNotebook } from '../services/importService.js';
 
 interface ExportRequest {
-  dataMode: DataMode;
+  format: ExportFormat;
+  chartImages?: Record<string, string>;
 }
 
 export async function notebooksRoutes(fastify: FastifyInstance): Promise<void> {
@@ -121,32 +122,44 @@ export async function notebooksRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // POST /notebooks/:id/export - Export notebook with data
+  // POST /notebooks/:id/export - Export notebook as markdown or .quackdb
   fastify.post<{ Params: { id: string }; Body: ExportRequest }>(
     '/notebooks/:id/export',
     async (request, reply) => {
       const { id } = request.params;
-      const { dataMode } = request.body;
+      const { format, chartImages } = request.body;
 
-      if (!['none', 'query-results', 'referenced-tables', 'full-db'].includes(dataMode)) {
+      if (!format || !['markdown', 'quackdb'].includes(format)) {
         return reply.status(400).type('application/json').send({
-          error:
-            'Invalid dataMode. Must be one of: none, query-results, referenced-tables, full-db',
+          error: 'Invalid format. Must be one of: markdown, quackdb',
         });
       }
 
       try {
-        const result = await exportNotebook(id, dataMode);
+        if (format === 'markdown') {
+          const markdown = await exportNotebookAsMarkdown(id, chartImages);
+          const notebook = await getNotebookWithCells(id);
+          if (!notebook) {
+            return reply.status(404).type('application/json').send({ error: 'Notebook not found' });
+          }
+          return reply
+            .type('text/markdown')
+            .header('Content-Disposition', `attachment; filename="${notebook.name}.md"`)
+            .send(markdown);
+        } else {
+          // format === 'quackdb'
+          const result = await exportNotebook(id);
 
-        if (!result) {
-          return reply.status(404).type('application/json').send({ error: 'Notebook not found' });
+          if (!result) {
+            return reply.status(404).type('application/json').send({ error: 'Notebook not found' });
+          }
+
+          const fileContent = await fs.readFile(result.path);
+          return reply
+            .type('application/octet-stream')
+            .header('Content-Disposition', `attachment; filename="${result.notebook.name}.quackdb"`)
+            .send(fileContent);
         }
-
-        const fileContent = await fs.readFile(result.path);
-        return reply
-          .type('application/octet-stream')
-          .header('Content-Disposition', `attachment; filename="${result.notebook.name}.quackdb"`)
-          .send(fileContent);
       } catch (error) {
         fastify.log.error(error);
         const message = (error as Error)?.message ?? 'Unknown error';

@@ -18,14 +18,53 @@ async function ensureExportDir(): Promise<void> {
   }
 }
 
-export type DataMode = 'none' | 'query-results' | 'referenced-tables' | 'full-db';
+export type ExportFormat = 'markdown' | 'quackdb';
 
 /**
- * Export a notebook to a .quackdb file with optional data
+ * Export a notebook as markdown with optional embedded chart images
+ */
+export async function exportNotebookAsMarkdown(
+  notebookId: string,
+  chartImages?: Record<string, string>
+): Promise<string> {
+  const notebook = await getNotebookWithCells(notebookId);
+  if (!notebook) {
+    throw new Error('Notebook not found');
+  }
+
+  const sections: string[] = [];
+  
+  // Add notebook title
+  sections.push(`# ${notebook.name}\n`);
+
+  // Process each cell
+  notebook.cells.forEach((cell, index) => {
+    if (cell.cell_type === 'markdown') {
+      // Markdown cells are included as-is
+      sections.push(cell.markdown_text || `<!-- markdown cell ${index + 1} -->`);
+      return;
+    }
+
+    // SQL cells
+    if (cell.cell_type === 'sql' && cell.sql_text) {
+      sections.push(`\`\`\`sql\n${cell.sql_text}\n\`\`\`\n`);
+      
+      // If there's a chart config and chart image, embed it
+      if (cell.chart_config && chartImages?.[cell.id]) {
+        const imageDataUrl = chartImages[cell.id];
+        sections.push(`\n![Chart](${imageDataUrl})\n`);
+      }
+    }
+  });
+
+  return sections.join('\n\n');
+}
+
+/**
+ * Export a notebook to a .quackdb file with referenced table data
  */
 export async function exportNotebook(
-  notebookId: string,
-  dataMode: DataMode
+  notebookId: string
 ): Promise<{ path: string; notebook: NotebookWithCells } | null> {
   // Get notebook
   const notebook = await getNotebookWithCells(notebookId);
@@ -59,75 +98,34 @@ export async function exportNotebook(
       notebookId
     );
 
-    // Copy data based on dataMode
-    if (dataMode === 'query-results' || dataMode === 'referenced-tables') {
-      // Copy metadata about files and tables
-      await dbConnection.run(`
-        CREATE TABLE export._files AS 
-        SELECT * FROM _files;
-      `);
+    // Copy metadata about files and tables
+    await dbConnection.run(`
+      CREATE TABLE export._files AS 
+      SELECT * FROM _files;
+    `);
 
-      await dbConnection.run(`
-        CREATE TABLE export._tables AS 
-        SELECT * FROM _tables;
-      `);
+    await dbConnection.run(`
+      CREATE TABLE export._tables AS 
+      SELECT * FROM _tables;
+    `);
 
-      // For each cell, extract table names and copy referenced tables
-      const tableNamesToExport = new Set<string>();
+    // For each cell, extract table names and copy referenced tables
+    const tableNamesToExport = new Set<string>();
 
-      for (const cell of notebook.cells) {
-        if (cell.cell_type === 'sql' && cell.sql_text) {
-          const tables = extractTableNamesFromSQL(cell.sql_text);
-          tables.forEach((t) => tableNamesToExport.add(t));
-        }
+    for (const cell of notebook.cells) {
+      if (cell.cell_type === 'sql' && cell.sql_text) {
+        const tables = extractTableNamesFromSQL(cell.sql_text);
+        tables.forEach((t) => tableNamesToExport.add(t));
       }
+    }
 
-      // Copy referenced tables (exclude metadata tables)
-      for (const tableName of tableNamesToExport) {
-        if (!tableName.startsWith('_')) {
-          try {
-            await dbConnection.run(`
-              CREATE TABLE export."${tableName}" AS 
-              SELECT * FROM "${tableName}";
-            `);
-          } catch (_err) {
-            // Table may not exist, skip
-          }
-        }
-      }
-    } else if (dataMode === 'full-db') {
-      // Copy everything
-      await dbConnection.run(`
-        CREATE TABLE export._files AS SELECT * FROM _files;
-      `);
-
-      await dbConnection.run(`
-        CREATE TABLE export._tables AS SELECT * FROM _tables;
-      `);
-
-      // Copy all user tables using SHOW TABLES
-      const tableNames: { name: string }[] = [];
-      try {
-        const tableResults = await dbConnection.query<{ name: string }>(
-          `SELECT table_name as name FROM information_schema.tables WHERE table_schema = 'main'`
-        );
-        tableNames.push(...tableResults);
-      } catch (_err) {
-        // Fallback: use SHOW TABLES
-        const showResults = await dbConnection.query(`SHOW TABLES;`);
-        for (const row of showResults) {
-          const tableName = (Object.values(row as Record<string, unknown>)[0] || '') as string;
-          if (tableName && !tableName.startsWith('_')) {
-            tableNames.push({ name: tableName });
-          }
-        }
-      }
-
-      for (const table of tableNames) {
+    // Copy referenced tables (exclude metadata tables)
+    for (const tableName of tableNamesToExport) {
+      if (!tableName.startsWith('_')) {
         try {
           await dbConnection.run(`
-            CREATE TABLE export."${table.name}" AS 
-            SELECT * FROM "${table.name}";
+            CREATE TABLE export."${tableName}" AS 
+            SELECT * FROM "${tableName}";
           `);
         } catch (_err) {
           // Table may not exist, skip

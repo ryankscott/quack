@@ -93,4 +93,111 @@ describe('Query Execution Route', () => {
     expect(body.result.rowCount).toBe(3);
     expect(body.result.truncated).toBe(false);
   });
+
+  describe('Table validation', () => {
+    it('allows query when table is in allowed_tables', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: '/query/execute',
+        payload: {
+          sql: 'SELECT * FROM users',
+          allowed_tables: ['users'],
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty('result');
+    });
+
+    it('rejects query when table is not in allowed_tables', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: '/query/execute',
+        payload: {
+          sql: 'SELECT * FROM users',
+          allowed_tables: ['orders'],
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain('users');
+      expect(body.error).toContain('not selected');
+    });
+
+    it('rejects query when no tables are selected', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: '/query/execute',
+        payload: {
+          sql: 'SELECT * FROM users',
+          allowed_tables: [],
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain('No tables are selected');
+    });
+
+    it('allows queries without table references even with empty allowed_tables', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: '/query/execute',
+        payload: {
+          sql: 'SELECT 1 as value',
+          allowed_tables: [],
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty('result');
+    });
+
+    it('validates multiple tables in JOIN', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: '/query/execute',
+        payload: {
+          sql: 'SELECT * FROM users JOIN orders ON users.id = orders.user_id',
+          allowed_tables: ['users', 'orders'],
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty('result');
+    });
+
+    it('rejects when one table in JOIN is not allowed', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: '/query/execute',
+        payload: {
+          sql: 'SELECT * FROM users JOIN orders ON users.id = orders.user_id',
+          allowed_tables: ['users'],
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain('orders');
+    });
+
+    it('works without allowed_tables (backward compatibility)', async () => {
+      const response = await server.inject({
+        method: 'POST',
+        url: '/query/execute',
+        payload: {
+          sql: 'SELECT * FROM users',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty('result');
+    });
+  });
 });

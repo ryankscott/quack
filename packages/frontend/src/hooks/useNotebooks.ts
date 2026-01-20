@@ -9,6 +9,7 @@ export interface NotebookCell {
   sql_text: string | null;
   markdown_text: string | null;
   chart_config: string | null;
+  selected_tables: string[] | null;
   created_at: string;
 }
 
@@ -32,6 +33,7 @@ export interface CreateNotebookRequest {
     sql_text?: string;
     markdown_text?: string;
     chart_config?: string;
+    selected_tables?: string[];
   }>;
 }
 
@@ -43,13 +45,15 @@ export interface UpdateNotebookRequest {
     sql_text?: string;
     markdown_text?: string;
     chart_config?: string;
+    selected_tables?: string[];
   }>;
 }
 
-export type DataMode = 'none' | 'query-results' | 'referenced-tables' | 'full-db';
+export type ExportFormat = 'markdown' | 'quackdb';
 
 export interface ExportRequest {
-  dataMode: DataMode;
+  format: ExportFormat;
+  chartImages?: Record<string, string>;
 }
 
 /**
@@ -135,23 +139,25 @@ export function useDeleteNotebook() {
 }
 
 /**
- * Export a notebook to .quackdb file
+ * Export a notebook as markdown or .quackdb file
  */
 export function useExportNotebook() {
   return useMutation({
     mutationFn: async ({
       notebookId,
-      dataMode,
+      format,
+      chartImages,
     }: {
       notebookId: string;
-      dataMode: DataMode;
+      format: ExportFormat;
+      chartImages?: Record<string, string>;
     }): Promise<Blob> => {
       // Export needs special handling to get blob response
       const url = new URL(`/api/notebooks/${notebookId}/export`, window.location.origin);
       const response = await fetch(url.toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dataMode }),
+        body: JSON.stringify({ format, chartImages }),
       });
       if (!response.ok) {
         const error = await response.json();

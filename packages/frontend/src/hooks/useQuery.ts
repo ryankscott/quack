@@ -16,6 +16,7 @@ export interface QueryResult {
 interface QueryExecuteRequest {
   sql: string;
   limit?: number;
+  allowed_tables?: string[];
 }
 
 interface QueryExecuteResponse {

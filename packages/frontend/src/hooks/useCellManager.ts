@@ -14,6 +14,9 @@ export interface CellState {
   chartImageUrl?: string;
   isEditorCollapsed?: boolean;
   isPreviewCollapsed?: boolean;
+  selectedTables?: string[];
+  /** Display mode for results: 'table' or 'chart'. Defaults to 'table'. */
+  displayMode?: 'table' | 'chart';
 }
 
 export function useCellManager(initialCells: CellState[] = []) {

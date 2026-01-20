@@ -1,24 +1,31 @@
 import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useExportNotebook, useImportNotebook, DataMode } from '../hooks/useNotebooks';
+import { useExportNotebook, useImportNotebook, useNotebook, ExportFormat } from '../hooks/useNotebooks';
+import { generateMarkdownFromCells } from '@/lib/markdown-export';
+import type { CellState } from '@/hooks/useCellManager';
 
 interface NotebookActionsProps {
   notebookId: string | null;
+  cells?: CellState[];
+  notebookName?: string;
   variant?: 'panel' | 'toolbar';
   className?: string;
 }
 
 export function NotebookActions({
   notebookId,
+  cells,
+  notebookName,
   variant = 'panel',
   className,
 }: NotebookActionsProps) {
-  const [dataMode, setDataMode] = useState<DataMode>('query-results');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('quackdb');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportMutation = useExportNotebook();
   const importMutation = useImportNotebook();
+  const notebookQuery = useNotebook(notebookId);
 
   const handleExport = async () => {
     if (!notebookId) {
@@ -28,20 +35,63 @@ export function NotebookActions({
 
     setIsExporting(true);
     try {
-      const blob = await exportMutation.mutateAsync({
-        notebookId,
-        dataMode,
-      });
+      if (exportFormat === 'markdown') {
+        // Generate markdown client-side with results if cells are available
+        if (cells && cells.length > 0) {
+          const name = notebookName || notebookQuery.data?.name || 'notebook';
+          const markdown = generateMarkdownFromCells(name, cells);
 
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `notebook_${new Date().getTime()}.quackdb`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+          // Create download link
+          const blob = new Blob([markdown], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${name}.md`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          toast.success('Notebook exported as markdown');
+        } else {
+          // Fall back to backend export if cells not available (e.g., panel variant)
+          const blob = await exportMutation.mutateAsync({
+            notebookId,
+            format: exportFormat,
+          });
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const name = notebookQuery.data?.name || 'notebook';
+          a.download = `${name}.md`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          toast.success('Notebook exported as markdown');
+        }
+      } else {
+        // .quackdb export uses backend
+        const blob = await exportMutation.mutateAsync({
+          notebookId,
+          format: exportFormat,
+        });
+
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const name = notebookQuery.data?.name || 'notebook';
+        a.download = `${name}.quackdb`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast.success('Notebook exported as .quackdb');
+      }
     } catch (error) {
       toast.error(`Export failed: ${(error as Error).message}`);
     } finally {
@@ -75,20 +125,18 @@ export function NotebookActions({
   if (variant === 'toolbar') {
     return (
       <div className={`flex items-center gap-2 ${className ?? ''}`.trim()}>
-        <label className="sr-only" htmlFor="export-data-mode">
-          Export data
+        <label className="sr-only" htmlFor="export-format">
+          Export format
         </label>
         <select
-          id="export-data-mode"
-          value={dataMode}
-          onChange={(e) => setDataMode(e.target.value as DataMode)}
-          className="input-base text-sm w-44"
+          id="export-format"
+          value={exportFormat}
+          onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+          className="input-base text-sm w-32"
           disabled={isExporting}
         >
-          <option value="none">No data</option>
-          <option value="query-results">Query results only</option>
-          <option value="referenced-tables">Referenced tables</option>
-          <option value="full-db">Full database</option>
+          <option value="markdown">Markdown</option>
+          <option value="quackdb">.quackdb</option>
         </select>
         <button
           onClick={handleExport}
@@ -123,15 +171,13 @@ export function NotebookActions({
         <h3 className="font-semibold text-sm">Export Notebook</h3>
         <div className="flex items-center gap-2">
           <select
-            value={dataMode}
-            onChange={(e) => setDataMode(e.target.value as DataMode)}
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
             className="input-base"
             disabled={isExporting}
           >
-            <option value="none">No data</option>
-            <option value="query-results">Query results only</option>
-            <option value="referenced-tables">Referenced tables</option>
-            <option value="full-db">Full database</option>
+            <option value="markdown">Markdown</option>
+            <option value="quackdb">.quackdb</option>
           </select>
           <button
             onClick={handleExport}
@@ -142,7 +188,9 @@ export function NotebookActions({
           </button>
         </div>
         <p className="text-xs text-quack-dark text-opacity-60">
-          Exports notebook with cells and selected data as a portable .quackdb file
+          {exportFormat === 'markdown'
+            ? 'Exports notebook as readable markdown file with query results and charts'
+            : 'Exports notebook with referenced table data as portable .quackdb file'}
         </p>
       </div>
 

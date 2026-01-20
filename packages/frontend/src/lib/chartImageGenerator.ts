@@ -1,29 +1,28 @@
-import { toPng } from 'html-to-image';
+import { toSvg } from 'html-to-image';
 
 /**
- * Generates a PNG data URL from a chart DOM element
+ * Generates an SVG data URL from a chart DOM element
  * @param element - The DOM element containing the chart
- * @returns A promise resolving to a base64 PNG data URL
+ * @returns A promise resolving to an SVG data URL (format: data:image/svg+xml;charset=utf-8,...)
  */
 export async function generateChartImage(element: HTMLElement): Promise<string> {
   try {
-    const dataUrl = await toPng(element, {
+    const dataUrl = await toSvg(element, {
       backgroundColor: '#ffffff',
-      pixelRatio: 2, // Higher resolution for better quality
       skipAutoScale: true,
     });
     return dataUrl;
   } catch (error) {
-    console.error('Failed to generate chart image:', error);
-    throw new Error('Failed to generate chart image');
+    console.error('Failed to generate chart SVG:', error);
+    throw new Error('Failed to generate chart SVG');
   }
 }
 
 /**
- * Generates chart images for all elements with a specific class
+ * Generates chart SVGs for all elements with a specific class
  * @param containerElement - Parent element containing charts
  * @param chartSelector - CSS selector for chart elements
- * @returns Map of element IDs to data URLs
+ * @returns Map of element IDs to SVG data URLs
  */
 export async function generateMultipleChartImages(
   containerElement: HTMLElement,

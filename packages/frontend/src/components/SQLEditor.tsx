@@ -26,7 +26,7 @@ export function SQLEditor({
   const handleEditorMount = (editor: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
     // Add Cmd+Enter / Ctrl+Enter shortcut for execution
     editor.addCommand(
-      (window.navigator.platform.match('Mac') ? 2048 : 2056) | 3, // Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
       () => {
         onExecute?.();
       }

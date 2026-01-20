@@ -1,6 +1,7 @@
 import { SQLEditor } from './SQLEditor';
 import { Button } from './ui/button';
 import { Eye, EyeOff } from 'lucide-react';
+import { CollapsibleContent } from './ui/collapsible';
 
 interface SQLCellEditorProps {
   sql: string;
@@ -25,7 +26,7 @@ export function SQLCellEditor({
   onToggleCollapse,
 }: SQLCellEditorProps) {
   return (
-    <div className="p-4">
+    <>
       <div className="flex items-center justify-between mb-2">
         <div className="text-xs uppercase text-quack-dark text-opacity-60 font-semibold">
           Editor
@@ -58,15 +59,17 @@ export function SQLCellEditor({
           </Button>
         </div>
       </div>
-      <div className="border border-quack-dark border-opacity-20 rounded overflow-hidden">
-        <SQLEditor
-          value={sql}
-          onChange={onSqlChange}
-          onExecute={onExecute}
-          height="200px"
-          tableNames={tableNames}
-        />
-      </div>
-    </div>
+      <CollapsibleContent>
+        <div className="border border-quack-dark border-opacity-20 rounded overflow-hidden">
+          <SQLEditor
+            value={sql}
+            onChange={onSqlChange}
+            onExecute={onExecute}
+            height="200px"
+            tableNames={tableNames}
+          />
+        </div>
+      </CollapsibleContent>
+    </>
   );
 }

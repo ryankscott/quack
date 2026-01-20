@@ -73,71 +73,71 @@ function aggregateData(
   return out;
 }
 
+interface RechartsChartProps {
+  config: ChartConfig;
+  result: QueryResult;
+  /** Use fixed dimensions instead of ResponsiveContainer (needed for image export) */
+  fixedSize?: { width: number; height: number };
+}
+
 export default function RechartsChart({
   config,
   result,
-}: {
-  config: ChartConfig;
-  result: QueryResult;
-}) {
+  fixedSize,
+}: RechartsChartProps) {
   const dataObjects = rowsToObjects(result);
   const data = aggregateData(dataObjects, config.xColumn, config.yColumn, config.aggregation);
 
-  switch (config.type) {
-    case 'bar':
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={data}>
+  const width = fixedSize?.width ?? '100%';
+  const height = fixedSize?.height ?? 400;
+
+  const renderChart = () => {
+    switch (config.type) {
+      case 'bar':
+        return (
+          <BarChart data={data} width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
             <XAxis dataKey="x" />
             <YAxis />
             <Tooltip />
             <Legend />
             <Bar dataKey="y" fill="#f4a261" />
           </BarChart>
-        </ResponsiveContainer>
-      );
-    case 'line':
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={data}>
+        );
+      case 'line':
+        return (
+          <LineChart data={data} width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
             <XAxis dataKey="x" />
             <YAxis />
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="y" stroke="#2a9d8f" dot={false} />
           </LineChart>
-        </ResponsiveContainer>
-      );
-    case 'area':
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <AreaChart data={data}>
+        );
+      case 'area':
+        return (
+          <AreaChart data={data} width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
             <XAxis dataKey="x" />
             <YAxis />
             <Tooltip />
             <Legend />
             <Area type="monotone" dataKey="y" stroke="#264653" fill="#e9c46a" />
           </AreaChart>
-        </ResponsiveContainer>
-      );
-    case 'scatter':
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <ScatterChart>
+        );
+      case 'scatter':
+        return (
+          <ScatterChart width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
             <XAxis dataKey="x" />
             <YAxis dataKey="y" />
             <Tooltip />
             <Legend />
             <Scatter data={data} fill="#e76f51" />
           </ScatterChart>
-        </ResponsiveContainer>
-      );
-    case 'pie': {
-      const pieData = data.map((d) => ({ name: String(d.x), value: d.y }));
-      const colors = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'];
-      return (
-        <ResponsiveContainer width="100%" height={400}>
-          <PieChart>
+        );
+      case 'pie': {
+        const pieData = data.map((d) => ({ name: String(d.x), value: d.y }));
+        const colors = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'];
+        return (
+          <PieChart width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
             <Tooltip />
             <Legend />
             <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={150}>
@@ -146,10 +146,22 @@ export default function RechartsChart({
               ))}
             </Pie>
           </PieChart>
-        </ResponsiveContainer>
-      );
+        );
+      }
+      default:
+        return null;
     }
-    default:
-      return null;
+  };
+
+  // If using fixed size, render chart directly without ResponsiveContainer
+  if (fixedSize) {
+    return renderChart();
   }
+
+  // Use ResponsiveContainer for normal display
+  return (
+    <ResponsiveContainer width="100%" height={400}>
+      {renderChart()}
+    </ResponsiveContainer>
+  );
 }

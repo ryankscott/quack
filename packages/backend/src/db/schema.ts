@@ -42,8 +42,25 @@ export async function initializeSchema(): Promise<void> {
       sql_text TEXT,
       markdown_text TEXT,
       chart_config TEXT,
+      selected_tables TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (notebook_id) REFERENCES _notebooks(id)
+    );
+  `);
+
+  // Add selected_tables column if it doesn't exist (migration for existing databases)
+  await dbConnection.run(`
+    ALTER TABLE _notebook_cells ADD COLUMN IF NOT EXISTS selected_tables TEXT;
+  `);
+
+  // Create junction table to track table-cell relationships
+  await dbConnection.run(`
+    CREATE TABLE IF NOT EXISTS _cell_tables (
+      id TEXT PRIMARY KEY,
+      cell_id TEXT NOT NULL,
+      table_name TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (cell_id) REFERENCES _notebook_cells(id)
     );
   `);
 }

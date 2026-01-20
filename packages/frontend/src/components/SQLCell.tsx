@@ -3,7 +3,7 @@ import { SQLCellHeader } from './SQLCellHeader';
 import { SQLCellEditor } from './SQLCellEditor';
 import { SQLCellError } from './SQLCellError';
 import { SQLCellResults } from './SQLCellResults';
-import { Collapsible, CollapsibleContent } from './ui/collapsible';
+import { Collapsible } from './ui/collapsible';
 import { useQueryExecution } from '@/hooks/useQuery';
 import { useTables } from '@/hooks/useTables';
 import type { CellState } from '@/hooks/useCellManager';
@@ -31,8 +31,11 @@ export function SQLCell({
   const queryMutation = useQueryExecution();
   const { data: tablesData } = useTables();
 
-  // Extract table names for autocomplete
-  const tableNames = tablesData?.map((t) => t.name) || [];
+  // Extract table names for autocomplete - filter to selected tables if any are selected
+  const allTableNames = tablesData?.map((t) => t.name) || [];
+  const tableNames = cell.selectedTables && cell.selectedTables.length > 0
+    ? cell.selectedTables.filter((name) => allTableNames.includes(name))
+    : allTableNames;
 
   useEffect(() => {
     if (cell.result && !cell.chartConfig) {
@@ -52,9 +55,18 @@ export function SQLCell({
   const handleExecute = () => {
     if (!cell.sql.trim()) return;
 
-    onUpdate({ isExecuting: true });
+    // Block execution if no tables are selected
+    if (!cell.selectedTables || cell.selectedTables.length === 0) {
+      onUpdate({
+        error: 'No tables are selected for this cell. Please select at least one table before executing the query.',
+        result: undefined,
+      });
+      return;
+    }
+
+    onUpdate({ isExecuting: true, error: undefined });
     queryMutation.mutate(
-      { sql: cell.sql },
+      { sql: cell.sql, allowed_tables: cell.selectedTables },
       {
         onSuccess: (result) => {
           onUpdate({ result, error: undefined, isExecuting: false });
@@ -72,13 +84,15 @@ export function SQLCell({
         cellIndex={cellIndex}
         totalCells={totalCells}
         isExecuting={cell.isExecuting}
+        selectedTables={cell.selectedTables || []}
+        onTablesChange={(tables) => onUpdate({ selectedTables: tables })}
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         onRemove={onRemove}
       />
 
-      <Collapsible open={!cell.isEditorCollapsed}>
-        <CollapsibleContent>
+      <div className="p-4">
+        <Collapsible open={!cell.isEditorCollapsed}>
           <SQLCellEditor
             sql={cell.sql}
             tableNames={tableNames}
@@ -88,24 +102,24 @@ export function SQLCell({
             onExecute={handleExecute}
             onToggleCollapse={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}
           />
-        </CollapsibleContent>
-      </Collapsible>
+        </Collapsible>
 
-      {cell.error && <SQLCellError error={cell.error} />}
+        {cell.error && <SQLCellError error={cell.error} />}
 
-      {cell.result && (
-        <Collapsible open={!cell.isPreviewCollapsed}>
-          <CollapsibleContent>
+        {cell.result && (
+          <Collapsible open={!cell.isPreviewCollapsed}>
             <SQLCellResults
               result={cell.result}
               chartConfig={cell.chartConfig || null}
               isCollapsed={cell.isPreviewCollapsed}
+              displayMode={cell.displayMode}
               onChartConfigChange={(config) => onUpdate({ chartConfig: config })}
               onToggleCollapse={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
+              onDisplayModeChange={(mode) => onUpdate({ displayMode: mode })}
             />
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+          </Collapsible>
+        )}
+      </div>
     </div>
   );
 }
