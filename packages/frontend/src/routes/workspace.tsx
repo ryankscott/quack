@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { WorkspaceSidebar } from '@/components/WorkspaceSidebar';
 import { WorkspaceToolbar } from '@/components/WorkspaceToolbar';
 import { WorkspaceCellList } from '@/components/WorkspaceCellList';
-import { WorkspacePreview } from '@/components/WorkspacePreview';
+import { WorkspacePreviewSimple } from '@/components/WorkspacePreviewSimple';
 import { useCellManager } from '@/hooks/useCellManager';
 import {
   useNotebooks,
@@ -53,22 +53,18 @@ export function WorkspacePage() {
     addCell('markdown');
   };
 
-  const handleChartImageGenerated = (cellId: string, imageUrl: string) => {
-    updateCell(cellId, { chartImageUrl: imageUrl });
-  };
-
   const handleSaveNotebook = async () => {
     if (!currentNotebookId) return;
-      const payload: CreateNotebookRequest = {
-        name: currentNotebookName.trim() || 'Untitled',
-        cells: cells.map((cell) => ({
-          cell_type: cell.type,
-          sql_text: cell.type === 'sql' ? cell.sql : undefined,
-          markdown_text: cell.type === 'markdown' ? cell.markdown : undefined,
-          chart_config: cell.chartConfig ? JSON.stringify(cell.chartConfig) : undefined,
-          selected_tables: cell.selectedTables,
-        })),
-      };
+    const payload: CreateNotebookRequest = {
+      name: currentNotebookName.trim() || 'Untitled',
+      cells: cells.map((cell) => ({
+        cell_type: cell.type,
+        sql_text: cell.type === 'sql' ? cell.sql : undefined,
+        markdown_text: cell.type === 'markdown' ? cell.markdown : undefined,
+        chart_config: cell.chartConfig ? JSON.stringify(cell.chartConfig) : undefined,
+        selected_tables: cell.selectedTables,
+      })),
+    };
 
     await updateNotebookMutation.mutateAsync({
       id: currentNotebookId,
@@ -150,7 +146,7 @@ export function WorkspacePage() {
         />
 
         {mode === 'preview' ? (
-          <WorkspacePreview cells={cells} onChartImagesGenerated={handleChartImageGenerated} />
+          <WorkspacePreviewSimple cells={cells} />
         ) : (
           <WorkspaceCellList
             cells={cells}

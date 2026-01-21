@@ -6,6 +6,7 @@ import type { TableColumn } from '@/hooks/useTableSchema';
 
 export interface SQLEditorRef {
   insertSnippet: (snippetText: string) => void;
+  insertText: (text: string) => void;
   focus: () => void;
 }
 
@@ -89,6 +90,36 @@ export const SQLEditor = forwardRef<SQLEditorRef, SQLEditorProps>(function SQLEd
         };
         editorInstance.executeEdits('template-insert', [op]);
       }
+    },
+    insertText: (text: string) => {
+      const editorInstance = internalEditorRef.current;
+      if (!editorInstance) return;
+
+      const selection = editorInstance.getSelection();
+      if (!selection) return;
+
+      // Insert text at current cursor position
+      const range = new Range(
+        selection.startLineNumber,
+        selection.startColumn,
+        selection.endLineNumber,
+        selection.endColumn
+      );
+      const id = { major: 1, minor: 1 };
+      const op = {
+        identifier: id,
+        range: range,
+        text: text,
+        forceMoveMarkers: true,
+      };
+      editorInstance.executeEdits('column-insert', [op]);
+
+      // Move cursor to end of inserted text
+      const newPosition = {
+        lineNumber: selection.startLineNumber,
+        column: selection.startColumn + text.length,
+      };
+      editorInstance.setPosition(newPosition);
     },
     focus: () => {
       internalEditorRef.current?.focus();
@@ -209,7 +240,7 @@ export const SQLEditor = forwardRef<SQLEditorRef, SQLEditorProps>(function SQLEd
       theme="vs"
       options={{
         minimap: { enabled: false },
-        fontSize: 14,
+        fontSize: 12,
         lineNumbers: 'on',
         readOnly,
         automaticLayout: true,

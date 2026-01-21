@@ -21,20 +21,21 @@ interface SQLCellResultsProps {
 /**
  * Results section of SQL cell with table/chart toggle and display
  */
-export function SQLCellResults({ 
-  result, 
-  chartConfig, 
+export function SQLCellResults({
+  result,
+  chartConfig,
   isCollapsed,
   displayMode = 'table',
   onChartConfigChange,
   onToggleCollapse,
   onDisplayModeChange,
-}: SQLCellResultsProps) {
+  cellId,
+}: SQLCellResultsProps & { cellId?: string }) {
   const showChart = displayMode === 'chart';
   const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(true);
 
   return (
-    <div className="mt-4">
+    <div className="mt-4" data-cell-id={cellId}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <div className="text-xs uppercase text-quack-dark text-opacity-60 font-semibold">
@@ -94,12 +95,12 @@ export function SQLCellResults({
             <div className="flex-1 overflow-auto">
               <ChartViewer config={chartConfig} result={result} />
             </div>
-            
+
             {/* Config Panel */}
             {isConfigPanelOpen && (
-              <ChartConfigPanel 
-                config={chartConfig} 
-                result={result} 
+              <ChartConfigPanel
+                config={chartConfig}
+                result={result}
                 onChange={onChartConfigChange}
                 onClose={() => setIsConfigPanelOpen(false)}
               />

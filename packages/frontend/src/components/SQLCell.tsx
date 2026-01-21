@@ -26,15 +26,7 @@ interface SQLCellProps {
 }
 
 export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
-  {
-    cell,
-    cellIndex,
-    totalCells,
-    onUpdate,
-    onRemove,
-    onMoveUp,
-    onMoveDown,
-  },
+  { cell, cellIndex, totalCells, onUpdate, onRemove, onMoveUp, onMoveDown },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,13 +45,14 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
 
   // Extract table names for autocomplete - filter to selected tables if any are selected
   const allTableNames = tablesData?.map((t) => t.name) || [];
-  const tableNames = cell.selectedTables && cell.selectedTables.length > 0
-    ? cell.selectedTables.filter((name) => allTableNames.includes(name))
-    : allTableNames;
+  const tableNames =
+    cell.selectedTables && cell.selectedTables.length > 0
+      ? cell.selectedTables.filter((name) => allTableNames.includes(name))
+      : allTableNames;
 
   // Fetch schemas for selected tables to enable column autocomplete
   const selectedTableNames = cell.selectedTables || [];
-  const { data: columnsByTable } = useTableSchemas(selectedTableNames);
+  const { data: columnsByTable, isLoading: isSchemasLoading } = useTableSchemas(selectedTableNames);
 
   useEffect(() => {
     if (cell.result && !cell.chartConfig) {
@@ -82,7 +75,8 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
     // Block execution if no tables are selected
     if (!cell.selectedTables || cell.selectedTables.length === 0) {
       onUpdate({
-        error: 'No tables are selected for this cell. Please select at least one table before executing the query.',
+        error:
+          'No tables are selected for this cell. Please select at least one table before executing the query.',
         result: undefined,
       });
       return;
@@ -103,7 +97,10 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
   };
 
   return (
-    <div ref={containerRef} className="flex flex-col h-auto min-w-0 border border-quack-dark border-opacity-10 rounded-lg bg-white mb-4 max-w-6xl">
+    <div
+      ref={containerRef}
+      className="flex flex-col h-auto min-w-0 border border-quack-dark border-opacity-10 rounded-lg bg-white mb-4 max-w-6xl"
+    >
       <SQLCellHeader
         cellIndex={cellIndex}
         totalCells={totalCells}
@@ -122,6 +119,8 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
             sql={cell.sql}
             tableNames={tableNames}
             columnsByTable={columnsByTable}
+            selectedTables={selectedTableNames}
+            isSchemasLoading={isSchemasLoading}
             isExecuting={cell.isExecuting}
             isCollapsed={cell.isEditorCollapsed}
             onSqlChange={(sql) => onUpdate({ sql })}
@@ -139,6 +138,7 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
               chartConfig={cell.chartConfig || null}
               isCollapsed={cell.isPreviewCollapsed}
               displayMode={cell.displayMode}
+              cellId={cell.id}
               onChartConfigChange={(config) => onUpdate({ chartConfig: config })}
               onToggleCollapse={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
               onDisplayModeChange={(mode) => onUpdate({ displayMode: mode })}

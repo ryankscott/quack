@@ -12,9 +12,7 @@ describe('SQLCell', () => {
       type: 'sql',
       sql: '',
       markdown: '',
-      queryName: '',
       isExecuting: false,
-      isDirty: false,
     };
 
     const { container } = render(
@@ -33,15 +31,13 @@ describe('SQLCell', () => {
 
   it('allows hiding both editor and results with toggle buttons remaining visible', () => {
     const onUpdate = vi.fn();
-    
+
     const mockCell: CellState = {
       id: 'test-cell',
       type: 'sql',
       sql: 'SELECT * FROM test',
       markdown: '',
-      queryName: '',
       isExecuting: false,
-      isDirty: false,
       result: {
         columns: [{ name: 'id', type: 'INTEGER' }],
         rows: [[1]],
@@ -91,7 +87,7 @@ describe('SQLCell', () => {
 
     // Verify results were collapsed
     expect(onUpdate).toHaveBeenCalledWith({ isPreviewCollapsed: true });
-    
+
     // Re-render with both collapsed to verify toggle buttons remain visible
     rerender(
       <QueryClientProvider client={queryClient}>
@@ -104,7 +100,7 @@ describe('SQLCell', () => {
         />
       </QueryClientProvider>
     );
-    
+
     // Verify both toggle buttons are still accessible even when both are hidden
     expect(screen.getByTitle('Show editor')).toBeTruthy();
     expect(screen.getByTitle('Show results')).toBeTruthy();
@@ -112,15 +108,13 @@ describe('SQLCell', () => {
 
   it('allows hiding editor when results are visible', () => {
     const onUpdate = vi.fn();
-    
+
     const mockCell: CellState = {
       id: 'test-cell',
       type: 'sql',
       sql: 'SELECT * FROM test',
       markdown: '',
-      queryName: '',
       isExecuting: false,
-      isDirty: false,
       result: {
         columns: [{ name: 'id', type: 'INTEGER' }],
         rows: [[1]],
@@ -152,15 +146,13 @@ describe('SQLCell', () => {
 
   it('allows hiding results when editor is visible', () => {
     const onUpdate = vi.fn();
-    
+
     const mockCell: CellState = {
       id: 'test-cell',
       type: 'sql',
       sql: 'SELECT * FROM test',
       markdown: '',
-      queryName: '',
       isExecuting: false,
-      isDirty: false,
       result: {
         columns: [{ name: 'id', type: 'INTEGER' }],
         rows: [[1]],

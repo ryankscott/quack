@@ -32,10 +32,7 @@ function formatTable(columns: { name: string }[], rows: unknown[][], maxRows = 5
  * Generate markdown from notebook cells with results
  * This matches what is shown in the preview tab
  */
-export function generateMarkdownFromCells(
-  notebookName: string,
-  cells: CellState[]
-): string {
+export function generateMarkdownFromCells(notebookName: string, cells: CellState[]): string {
   const sections: string[] = [];
 
   // Add notebook title (only if name is provided)

@@ -61,11 +61,10 @@ describe('useCellManager', () => {
     expect(cellId).toBeDefined();
 
     act(() => {
-      result.current.updateCell(cellId!, { sql: 'SELECT 1', isDirty: true });
+      result.current.updateCell(cellId!, { sql: 'SELECT 1' });
     });
 
     expect(result.current.cells[0]?.sql).toBe('SELECT 1');
-    expect(result.current.cells[0]?.isDirty).toBe(true);
   });
 
   it('moves a cell up', () => {

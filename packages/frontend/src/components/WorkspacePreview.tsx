@@ -25,13 +25,17 @@ export function WorkspacePreview({ cells, onChartImagesGenerated }: WorkspacePre
   const [generatingImages, setGeneratingImages] = useState(false);
   const chartRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-
   // Generate chart images lazily when preview is shown
   useEffect(() => {
     const generateImages = async () => {
       // Only generate images for cells that have displayMode === 'chart'
       const cellsNeedingImages = cells.filter(
-        (cell) => cell.type === 'sql' && cell.displayMode === 'chart' && cell.chartConfig && cell.result && !cell.chartImageUrl
+        (cell) =>
+          cell.type === 'sql' &&
+          cell.displayMode === 'chart' &&
+          cell.chartConfig &&
+          cell.result &&
+          !cell.chartImageUrl
       );
 
       if (cellsNeedingImages.length === 0) {
@@ -76,17 +80,37 @@ export function WorkspacePreview({ cells, onChartImagesGenerated }: WorkspacePre
     <div className="flex-1 overflow-y-auto p-4">
       {/* Hidden chart rendering area for image generation - uses fixed size charts */}
       {/* Using opacity:0 instead of visibility:hidden for html-to-image compatibility */}
-      <div style={{ position: 'fixed', top: 0, left: 0, opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          opacity: 0,
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      >
         {cells.map((cell) => {
           // Only render hidden charts for cells with displayMode === 'chart'
-          if (cell.type === 'sql' && cell.displayMode === 'chart' && cell.chartConfig && cell.result && !cell.chartImageUrl) {
+          if (
+            cell.type === 'sql' &&
+            cell.displayMode === 'chart' &&
+            cell.chartConfig &&
+            cell.result &&
+            !cell.chartImageUrl
+          ) {
             return (
               <div
                 key={cell.id}
                 ref={(el) => {
                   if (el) chartRefs.current.set(cell.id, el);
                 }}
-                style={{ width: '800px', height: '400px', backgroundColor: '#ffffff', padding: '16px' }}
+                style={{
+                  width: '800px',
+                  height: '400px',
+                  backgroundColor: '#ffffff',
+                  padding: '16px',
+                }}
               >
                 <RechartsChart
                   config={cell.chartConfig}

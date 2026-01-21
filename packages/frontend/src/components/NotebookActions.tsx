@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useExportNotebook, useImportNotebook, useNotebook, ExportFormat } from '../hooks/useNotebooks';
 import { generateMarkdownFromCells } from '@/lib/markdown-export';
+import { captureChartByCellId } from '@/lib/chart-capture';
 import type { CellState } from '@/hooks/useCellManager';
 
 interface NotebookActionsProps {
@@ -39,7 +40,24 @@ export function NotebookActions({
         // Generate markdown client-side with results if cells are available
         if (cells && cells.length > 0) {
           const name = notebookName || notebookQuery.data?.name || 'notebook';
-          const markdown = generateMarkdownFromCells(name, cells);
+          
+          // Capture chart images for cells in chart mode
+          const cellsWithChartImages: CellState[] = await Promise.all(
+            cells.map(async (cell) => {
+              if (cell.displayMode === 'chart' && cell.chartConfig && cell.result) {
+                try {
+                  const chartImageUrl = await captureChartByCellId(cell.id);
+                  return { ...cell, chartImageUrl: chartImageUrl || undefined };
+                } catch (error) {
+                  console.error(`Failed to capture chart for cell ${cell.id}:`, error);
+                  return cell;
+                }
+              }
+              return cell;
+            })
+          );
+
+          const markdown = generateMarkdownFromCells(name, cellsWithChartImages);
 
           // Create download link
           const blob = new Blob([markdown], { type: 'text/markdown' });
