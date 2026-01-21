@@ -8,7 +8,9 @@ interface ChartViewerProps {
 }
 
 export function ChartViewer({ config, result }: ChartViewerProps) {
-  return (<div className='w-full h-full p-8' data-chart-viewer>
-    <RechartsChart config={config} result={result} />
-  </div>)
+  return (
+    <div className="w-full h-full p-8" data-chart-viewer>
+      <RechartsChart config={config} result={result} />
+    </div>
+  );
 }

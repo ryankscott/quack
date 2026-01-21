@@ -1,6 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useExportNotebook, useImportNotebook, useNotebook, ExportFormat } from '../hooks/useNotebooks';
+import {
+  useExportNotebook,
+  useImportNotebook,
+  useNotebook,
+  ExportFormat,
+} from '../hooks/useNotebooks';
 import { generateMarkdownFromCells } from '@/lib/markdown-export';
 import { captureChartByCellId } from '@/lib/chart-capture';
 import type { CellState } from '@/hooks/useCellManager';
@@ -40,7 +45,7 @@ export function NotebookActions({
         // Generate markdown client-side with results if cells are available
         if (cells && cells.length > 0) {
           const name = notebookName || notebookQuery.data?.name || 'notebook';
-          
+
           // Capture chart images for cells in chart mode
           const cellsWithChartImages: CellState[] = await Promise.all(
             cells.map(async (cell) => {
