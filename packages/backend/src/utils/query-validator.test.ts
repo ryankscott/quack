@@ -40,6 +40,45 @@ describe('query-validator', () => {
       const tables = extractTableReferences('SELECT * FROM users AS u');
       expect(tables).toContain('users');
     });
+
+    it('excludes CTE names from table references', () => {
+      const tables = extractTableReferences(`
+        WITH yearly AS (
+          SELECT EXTRACT(YEAR FROM date) as year, SUM(value) as total
+          FROM sales
+          GROUP BY EXTRACT(YEAR FROM date)
+        )
+        SELECT * FROM yearly
+      `);
+      expect(tables).toContain('sales');
+      expect(tables).not.toContain('yearly');
+    });
+
+    it('handles multiple CTEs', () => {
+      const tables = extractTableReferences(`
+        WITH monthly AS (
+          SELECT * FROM sales
+        ),
+        yearly AS (
+          SELECT * FROM monthly
+        )
+        SELECT * FROM yearly
+      `);
+      expect(tables).toContain('sales');
+      expect(tables).not.toContain('monthly');
+      expect(tables).not.toContain('yearly');
+    });
+
+    it('handles recursive CTEs', () => {
+      const tables = extractTableReferences(`
+        WITH RECURSIVE hierarchy AS (
+          SELECT id, parent_id FROM nodes
+        )
+        SELECT * FROM hierarchy
+      `);
+      expect(tables).toContain('nodes');
+      expect(tables).not.toContain('hierarchy');
+    });
   });
 
   describe('validateTableAccess', () => {
@@ -95,6 +134,58 @@ describe('query-validator', () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain('users');
       expect(result.error).toContain('orders');
+    });
+
+    it('allows CTE queries when underlying table is allowed', () => {
+      const result = validateTableAccess(
+        `WITH yearly AS (
+          SELECT EXTRACT(YEAR FROM date) as year, SUM(value) as total
+          FROM sales
+          GROUP BY EXTRACT(YEAR FROM date)
+        )
+        SELECT * FROM yearly`,
+        ['sales']
+      );
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects CTE queries when underlying table is not allowed', () => {
+      const result = validateTableAccess(
+        `WITH yearly AS (
+          SELECT EXTRACT(YEAR FROM date) as year, SUM(value) as total
+          FROM sales
+          GROUP BY EXTRACT(YEAR FROM date)
+        )
+        SELECT * FROM yearly`,
+        ['orders']
+      );
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('sales');
+    });
+
+    it('handles multiple CTEs with real table references', () => {
+      const result = validateTableAccess(
+        `WITH monthly AS (
+          SELECT * FROM sales
+        ),
+        yearly AS (
+          SELECT * FROM monthly
+        )
+        SELECT * FROM yearly`,
+        ['sales']
+      );
+      expect(result.valid).toBe(true);
+    });
+
+    it('handles recursive CTEs', () => {
+      const result = validateTableAccess(
+        `WITH RECURSIVE hierarchy AS (
+          SELECT id, parent_id FROM nodes
+        )
+        SELECT * FROM hierarchy`,
+        ['nodes']
+      );
+      expect(result.valid).toBe(true);
     });
   });
 });

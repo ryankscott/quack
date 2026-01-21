@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useFiles } from '@/hooks/useFiles';
-import { useCreateTable } from '@/hooks/useTables';
 import { LoadingState, ErrorState } from './ui/loading-error';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { ImportDialog } from './ImportDialog';
 
 interface FileListProps {
   onTableCreated?: (tableName: string) => void;
@@ -11,31 +10,12 @@ interface FileListProps {
 
 export function FileList({ onTableCreated }: FileListProps) {
   const { data: files, isLoading, error } = useFiles();
-  const createTableMutation = useCreateTable();
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
-  const [tableName, setTableName] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleCreateTable = (fileId: string) => {
     setSelectedFileId(fileId);
-    setTableName('');
-  };
-
-  const handleSubmit = () => {
-    if (!selectedFileId || !tableName.trim()) return;
-
-    createTableMutation.mutate(
-      {
-        file_id: selectedFileId,
-        table_name: tableName.trim(),
-      },
-      {
-        onSuccess: (data) => {
-          setSelectedFileId(null);
-          setTableName('');
-          onTableCreated?.(data.table_name);
-        },
-      }
-    );
+    setDialogOpen(true);
   };
 
   if (isLoading) {
@@ -74,50 +54,31 @@ export function FileList({ onTableCreated }: FileListProps) {
               </div>
               <Button
                 onClick={() => handleCreateTable(file.id)}
-                disabled={createTableMutation.isPending}
                 size="sm"
                 variant="default"
               >
-                Create Table
+                Import to Table
               </Button>
             </div>
-
-            {selectedFileId === file.id && (
-              <div className="mt-3 pt-3 border-t border-quack-dark border-opacity-10">
-                <Input
-                  type="text"
-                  value={tableName}
-                  onChange={(e) => setTableName(e.target.value)}
-                  placeholder="Enter table name (e.g., my_data)"
-                  disabled={createTableMutation.isPending}
-                />
-                <div className="mt-2 flex gap-2">
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!tableName.trim() || createTableMutation.isPending}
-                    size="sm"
-                  >
-                    {createTableMutation.isPending ? 'Creating...' : 'Create'}
-                  </Button>
-                  <Button
-                    onClick={() => setSelectedFileId(null)}
-                    disabled={createTableMutation.isPending}
-                    size="sm"
-                    variant="outline"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-                {createTableMutation.isError && (
-                  <div className="mt-2 text-xs text-red-600">
-                    {createTableMutation.error.message}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         ))}
       </div>
+      {selectedFileId && (
+        <ImportDialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              setSelectedFileId(null);
+            }
+          }}
+          fileId={selectedFileId}
+          onSuccess={(tableName) => {
+            setSelectedFileId(null);
+            onTableCreated?.(tableName);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,12 +1,16 @@
 import { useCallback, useState } from 'react';
 import { useUploadFile } from '@/hooks/useFiles';
+import { ImportDialog } from './ImportDialog';
 
 interface FileUploadProps {
   onUploadSuccess?: (fileId: string) => void;
+  onTableCreated?: (tableName: string) => void;
 }
 
-export function FileUpload({ onUploadSuccess }: FileUploadProps) {
+export function FileUpload({ onUploadSuccess, onTableCreated }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const uploadMutation = useUploadFile();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -29,6 +33,8 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
         const file = files[0];
         uploadMutation.mutate(file, {
           onSuccess: (fileId) => {
+            setUploadedFileId(fileId);
+            setDialogOpen(true);
             onUploadSuccess?.(fileId);
           },
         });
@@ -44,6 +50,8 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
         const file = files[0];
         uploadMutation.mutate(file, {
           onSuccess: (fileId) => {
+            setUploadedFileId(fileId);
+            setDialogOpen(true);
             onUploadSuccess?.(fileId);
           },
         });
@@ -94,6 +102,17 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
       )}
       {uploadMutation.isSuccess && (
         <div className="mt-2 text-sm text-green-600">File uploaded successfully!</div>
+      )}
+      {uploadedFileId && (
+        <ImportDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          fileId={uploadedFileId}
+          onSuccess={(tableName) => {
+            setUploadedFileId(null);
+            onTableCreated?.(tableName);
+          }}
+        />
       )}
     </div>
   );

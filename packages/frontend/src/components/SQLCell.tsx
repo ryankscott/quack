@@ -1,13 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { SQLCellHeader } from './SQLCellHeader';
-import { SQLCellEditor } from './SQLCellEditor';
+import { SQLCellEditor, type SQLCellEditorRef } from './SQLCellEditor';
 import { SQLCellError } from './SQLCellError';
 import { SQLCellResults } from './SQLCellResults';
 import { Collapsible } from './ui/collapsible';
 import { useQueryExecution } from '@/hooks/useQuery';
 import { useTables } from '@/hooks/useTables';
+import { useTableSchemas } from '@/hooks/useTableSchemas';
 import type { CellState } from '@/hooks/useCellManager';
 import { getDefaultChartConfig } from '@/lib/chart-config';
+
+export interface SQLCellRef {
+  scrollIntoView: () => void;
+  focus: () => void;
+}
 
 interface SQLCellProps {
   cell: CellState;
@@ -19,15 +25,29 @@ interface SQLCellProps {
   onMoveDown?: () => void;
 }
 
-export function SQLCell({
-  cell,
-  cellIndex,
-  totalCells,
-  onUpdate,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-}: SQLCellProps) {
+export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
+  {
+    cell,
+    cellIndex,
+    totalCells,
+    onUpdate,
+    onRemove,
+    onMoveUp,
+    onMoveDown,
+  },
+  ref
+) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<SQLCellEditorRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    scrollIntoView: () => {
+      containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+    focus: () => {
+      editorRef.current?.focus();
+    },
+  }));
   const queryMutation = useQueryExecution();
   const { data: tablesData } = useTables();
 
@@ -36,6 +56,10 @@ export function SQLCell({
   const tableNames = cell.selectedTables && cell.selectedTables.length > 0
     ? cell.selectedTables.filter((name) => allTableNames.includes(name))
     : allTableNames;
+
+  // Fetch schemas for selected tables to enable column autocomplete
+  const selectedTableNames = cell.selectedTables || [];
+  const { data: columnsByTable } = useTableSchemas(selectedTableNames);
 
   useEffect(() => {
     if (cell.result && !cell.chartConfig) {
@@ -79,7 +103,7 @@ export function SQLCell({
   };
 
   return (
-    <div className="flex flex-col h-auto min-w-0 border border-quack-dark border-opacity-10 rounded-lg bg-white mb-4 max-w-6xl">
+    <div ref={containerRef} className="flex flex-col h-auto min-w-0 border border-quack-dark border-opacity-10 rounded-lg bg-white mb-4 max-w-6xl">
       <SQLCellHeader
         cellIndex={cellIndex}
         totalCells={totalCells}
@@ -94,8 +118,10 @@ export function SQLCell({
       <div className="p-4">
         <Collapsible open={!cell.isEditorCollapsed}>
           <SQLCellEditor
+            ref={editorRef}
             sql={cell.sql}
             tableNames={tableNames}
+            columnsByTable={columnsByTable}
             isExecuting={cell.isExecuting}
             isCollapsed={cell.isEditorCollapsed}
             onSqlChange={(sql) => onUpdate({ sql })}
@@ -122,4 +148,4 @@ export function SQLCell({
       </div>
     </div>
   );
-}
+});

@@ -28,6 +28,8 @@ export function WorkspacePage() {
     moveCellDown,
     getCellIndex,
     setCellsDirectly,
+    newlyAddedCellId,
+    clearNewlyAddedCellId,
   } = useCellManager();
   const notebooksQuery = useNotebooks();
   const currentNotebookQuery = useNotebook(currentNotebookId);
@@ -157,6 +159,8 @@ export function WorkspacePage() {
             onRemoveCell={removeCell}
             onMoveCellUp={moveCellUp}
             onMoveCellDown={moveCellDown}
+            newlyAddedCellId={newlyAddedCellId}
+            onCellFocused={clearNewlyAddedCellId}
           />
         )}
       </div>

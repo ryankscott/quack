@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { ResultTable } from './ResultTable';
 import { ChartViewer } from './ChartViewer';
 import { ChartConfigPanel } from './ChartConfig';
 import { Button } from './ui/button';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Settings } from 'lucide-react';
 import { CollapsibleContent } from './ui/collapsible';
 import type { QueryResult } from '@/hooks/useQuery';
 import type { ChartConfig } from '@/lib/chart-config';
@@ -30,6 +31,7 @@ export function SQLCellResults({
   onDisplayModeChange,
 }: SQLCellResultsProps) {
   const showChart = displayMode === 'chart';
+  const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(true);
 
   return (
     <div className="mt-4">
@@ -56,6 +58,18 @@ export function SQLCellResults({
               <span className="ml-1 text-xs">{isCollapsed ? 'Show' : 'Hide'}</span>
             </Button>
           )}
+          {showChart && chartConfig && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)}
+              title={isConfigPanelOpen ? 'Hide configuration' : 'Show configuration'}
+            >
+              <Settings size={14} />
+              <span className="ml-1 text-xs">Configure</span>
+            </Button>
+          )}
           <Button
             onClick={() => onDisplayModeChange?.('table')}
             variant={!showChart ? 'default' : 'outline'}
@@ -75,11 +89,21 @@ export function SQLCellResults({
 
       <CollapsibleContent>
         {showChart && chartConfig ? (
-          <div className="space-y-3">
-            <ChartConfigPanel config={chartConfig} result={result} onChange={onChartConfigChange} />
-            <div className="max-h-96 overflow-auto border border-quack-dark border-opacity-10 rounded">
+          <div className="flex border border-quack-dark border-opacity-10 rounded h-[500px]">
+            {/* Chart Area */}
+            <div className="flex-1 overflow-auto">
               <ChartViewer config={chartConfig} result={result} />
             </div>
+            
+            {/* Config Panel */}
+            {isConfigPanelOpen && (
+              <ChartConfigPanel 
+                config={chartConfig} 
+                result={result} 
+                onChange={onChartConfigChange}
+                onClose={() => setIsConfigPanelOpen(false)}
+              />
+            )}
           </div>
         ) : (
           <div className="max-h-96 overflow-auto border border-quack-dark border-opacity-10 rounded">

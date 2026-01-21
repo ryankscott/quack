@@ -41,7 +41,7 @@ export function TemplatePicker({ onSelect }: TemplatePickerProps) {
           if (!templates) return null;
           return (
             <SelectGroup key={category}>
-              <SelectLabel>{category}</SelectLabel>
+              <SelectLabel className='text-xs font-medium text-quack-dark text-opacity-60 uppercase'>{category}</SelectLabel>
               {templates.map((template) => (
                 <SelectItem key={template.id} value={template.id}>
                   <div className="flex flex-col">

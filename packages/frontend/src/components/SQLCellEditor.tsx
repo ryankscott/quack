@@ -1,14 +1,20 @@
-import { useRef } from 'react';
+import { useRef, forwardRef, useImperativeHandle } from 'react';
 import { SQLEditor, type SQLEditorRef } from './SQLEditor';
 import { TemplatePicker } from './TemplatePicker';
 import { Button } from './ui/button';
 import { Eye, EyeOff } from 'lucide-react';
 import { CollapsibleContent } from './ui/collapsible';
 import type { SQLTemplate } from '@/lib/sql-templates';
+import type { TableColumn } from '@/hooks/useTableSchema';
+
+export interface SQLCellEditorRef {
+  focus: () => void;
+}
 
 interface SQLCellEditorProps {
   sql: string;
   tableNames: string[];
+  columnsByTable?: Record<string, TableColumn[]>;
   isExecuting: boolean;
   isCollapsed?: boolean;
   onSqlChange: (sql: string) => void;
@@ -19,16 +25,26 @@ interface SQLCellEditorProps {
 /**
  * Editor section of SQL cell with SQL editor and execute button
  */
-export function SQLCellEditor({
-  sql,
-  tableNames,
-  isExecuting,
-  isCollapsed,
-  onSqlChange,
-  onExecute,
-  onToggleCollapse,
-}: SQLCellEditorProps) {
+export const SQLCellEditor = forwardRef<SQLCellEditorRef, SQLCellEditorProps>(function SQLCellEditor(
+  {
+    sql,
+    tableNames,
+    columnsByTable,
+    isExecuting,
+    isCollapsed,
+    onSqlChange,
+    onExecute,
+    onToggleCollapse,
+  },
+  ref
+) {
   const editorRef = useRef<SQLEditorRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      editorRef.current?.focus();
+    },
+  }));
 
   const handleTemplateSelect = (template: SQLTemplate) => {
     editorRef.current?.insertSnippet(template.template);
@@ -37,6 +53,7 @@ export function SQLCellEditor({
       editorRef.current?.focus();
     }, 50);
   };
+
 
   return (
     <>
@@ -82,9 +99,10 @@ export function SQLCellEditor({
             onExecute={onExecute}
             height="200px"
             tableNames={tableNames}
+            columnsByTable={columnsByTable}
           />
         </div>
       </CollapsibleContent>
     </>
   );
-}
+});

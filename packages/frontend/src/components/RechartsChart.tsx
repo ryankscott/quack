@@ -1,7 +1,6 @@
 import type { ChartConfig } from '@/lib/chart-config';
 import type { QueryResult } from '@/hooks/useQuery';
 import {
-  ResponsiveContainer,
   BarChart,
   Bar,
   LineChart,
@@ -15,9 +14,15 @@ import {
   Cell,
   XAxis,
   YAxis,
-  Tooltip,
-  Legend,
 } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig as ShadcnChartConfig,
+} from '@/components/ui/chart';
 
 function rowsToObjects(result: QueryResult): Record<string, any>[] {
   return result.rows.map((row) => {
@@ -29,48 +34,12 @@ function rowsToObjects(result: QueryResult): Record<string, any>[] {
   });
 }
 
-function aggregateData(
+function transformData(
   data: Record<string, any>[],
   xKey: string,
-  yKey: string,
-  aggregation: ChartConfig['aggregation']
+  yKey: string
 ): { x: any; y: number }[] {
-  if (aggregation === 'none') {
-    return data.map((d) => ({ x: d[xKey], y: Number(d[yKey]) }));
-  }
-  const groups = new Map<any, number[]>();
-  for (const d of data) {
-    const x = d[xKey];
-    const y = Number(d[yKey]);
-    const arr = groups.get(x) || [];
-    arr.push(y);
-    groups.set(x, arr);
-  }
-  const out: { x: any; y: number }[] = [];
-  groups.forEach((vals, x) => {
-    let y = 0;
-    switch (aggregation) {
-      case 'sum':
-        y = vals.reduce((a, b) => a + b, 0);
-        break;
-      case 'avg':
-        y = vals.reduce((a, b) => a + b, 0) / vals.length;
-        break;
-      case 'count':
-        y = vals.length;
-        break;
-      case 'min':
-        y = Math.min(...vals);
-        break;
-      case 'max':
-        y = Math.max(...vals);
-        break;
-      default:
-        y = vals.reduce((a, b) => a + b, 0);
-    }
-    out.push({ x, y });
-  });
-  return out;
+  return data.map((d) => ({ x: d[xKey], y: Number(d[yKey]) || 0 }));
 }
 
 interface RechartsChartProps {
@@ -86,82 +55,205 @@ export default function RechartsChart({
   fixedSize,
 }: RechartsChartProps) {
   const dataObjects = rowsToObjects(result);
-  const data = aggregateData(dataObjects, config.xColumn, config.yColumn, config.aggregation);
+  const data = transformData(dataObjects, config.xColumn, config.yColumn);
 
-  const width = fixedSize?.width ?? '100%';
+  // Build shadcn chart config for CSS variable injection
+  // Use 'y' as the key since that's what we use in the transformed data
+  const shadcnConfig: ShadcnChartConfig = {
+    y: {
+      label: config.seriesConfig.label,
+      color: config.seriesConfig.color,
+    },
+  };
+
+  const width = fixedSize?.width;
   const height = fixedSize?.height ?? 400;
 
-  const renderChart = () => {
+  // For pie charts, we need different config
+  if (config.type === 'pie') {
+    const pieData = data.map((d) => ({ name: String(d.x), value: d.y }));
+    // Generate colors for pie slices
+    const COLORS = ['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0891b2'];
+
+    // Build config for each pie slice
+    const pieConfig: ShadcnChartConfig = {};
+    pieData.forEach((item, idx) => {
+      pieConfig[item.name] = {
+        label: item.name,
+        color: COLORS[idx % COLORS.length],
+      };
+    });
+
+    const commonProps = {
+      width,
+      height,
+    };
+
+    const pieChart = (
+      <PieChart {...commonProps} accessibilityLayer>
+        <ChartTooltip content={<ChartTooltipContent />} />
+        {config.showLegend && <ChartLegend content={<ChartLegendContent />} />}
+        <Pie
+          data={pieData}
+          dataKey="value"
+          nameKey="name"
+          outerRadius={150}
+        >
+          {pieData.map((entry, idx) => (
+            <Cell key={`cell-${idx}`} fill={`var(--color-${entry.name})`} />
+          ))}
+        </Pie>
+      </PieChart>
+    );
+
+    if (fixedSize) {
+      return (
+        <div style={{ width: fixedSize.width, height: fixedSize.height }}>
+          <ChartContainer config={pieConfig} className="h-full w-full">
+            {pieChart}
+          </ChartContainer>
+        </div>
+      );
+    }
+
+    return (
+      <ChartContainer config={pieConfig} className="h-[400px] w-full p-2">
+        {pieChart}
+      </ChartContainer>
+    );
+  }
+
+  // For all other chart types
+  const chartContent = () => {
+    const commonProps = {
+      width,
+      height,
+    };
+
     switch (config.type) {
       case 'bar':
         return (
-          <BarChart data={data} width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
-            <XAxis dataKey="x" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="y" fill="#f4a261" />
+          <BarChart data={data} {...commonProps} accessibilityLayer>
+            <XAxis
+              dataKey="x"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.xAxisTitle ? { value: config.xAxisTitle, position: 'bottom' } : undefined}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.yAxisTitle ? { value: config.yAxisTitle, angle: -90, position: 'insideLeft' } : undefined}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            {config.showLegend && <ChartLegend content={<ChartLegendContent />} />}
+            <Bar dataKey="y" fill="var(--color-y)" radius={4} name={config.seriesConfig.label} />
           </BarChart>
         );
       case 'line':
         return (
-          <LineChart data={data} width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
-            <XAxis dataKey="x" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="y" stroke="#2a9d8f" dot={false} />
+          <LineChart data={data} {...commonProps} accessibilityLayer>
+            <XAxis
+              dataKey="x"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.xAxisTitle ? { value: config.xAxisTitle, position: 'bottom' } : undefined}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.yAxisTitle ? { value: config.yAxisTitle, angle: -90, position: 'insideLeft' } : undefined}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            {config.showLegend && <ChartLegend content={<ChartLegendContent />} />}
+            <Line
+              type="monotone"
+              dataKey="y"
+              stroke="var(--color-y)"
+              dot={false}
+              name={config.seriesConfig.label}
+            />
           </LineChart>
         );
       case 'area':
         return (
-          <AreaChart data={data} width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
-            <XAxis dataKey="x" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Area type="monotone" dataKey="y" stroke="#264653" fill="#e9c46a" />
+          <AreaChart data={data} {...commonProps} accessibilityLayer>
+            <XAxis
+              dataKey="x"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.xAxisTitle ? { value: config.xAxisTitle, position: 'bottom' } : undefined}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.yAxisTitle ? { value: config.yAxisTitle, angle: -90, position: 'insideLeft' } : undefined}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            {config.showLegend && <ChartLegend content={<ChartLegendContent />} />}
+            <Area
+              type="monotone"
+              dataKey="y"
+              stroke="var(--color-y)"
+              fill="var(--color-y)"
+              fillOpacity={0.2}
+              name={config.seriesConfig.label}
+            />
           </AreaChart>
         );
       case 'scatter':
         return (
-          <ScatterChart width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
-            <XAxis dataKey="x" />
-            <YAxis dataKey="y" />
-            <Tooltip />
-            <Legend />
-            <Scatter data={data} fill="#e76f51" />
+          <ScatterChart {...commonProps} accessibilityLayer>
+            <XAxis
+              dataKey="x"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.xAxisTitle ? { value: config.xAxisTitle, position: 'bottom' } : undefined}
+            />
+            <YAxis
+              dataKey="y"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              label={config.yAxisTitle ? { value: config.yAxisTitle, angle: -90, position: 'insideLeft' } : undefined}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            {config.showLegend && <ChartLegend content={<ChartLegendContent />} />}
+            <Scatter data={data} fill="var(--color-y)" name={config.seriesConfig.label} />
           </ScatterChart>
         );
-      case 'pie': {
-        const pieData = data.map((d) => ({ name: String(d.x), value: d.y }));
-        const colors = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'];
-        return (
-          <PieChart width={typeof width === 'number' ? width : undefined} height={typeof height === 'number' ? height : undefined}>
-            <Tooltip />
-            <Legend />
-            <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={150}>
-              {pieData.map((_, idx) => (
-                <Cell key={idx} fill={colors[idx % colors.length]} />
-              ))}
-            </Pie>
-          </PieChart>
-        );
-      }
       default:
-        return null;
+        return <div>Unsupported chart type</div>;
     }
   };
 
-  // If using fixed size, render chart directly without ResponsiveContainer
-  if (fixedSize) {
-    return renderChart();
+  const content = chartContent();
+  if (!content) {
+    return null;
   }
 
-  // Use ResponsiveContainer for normal display
+  // If using fixed size, render chart directly without ChartContainer's ResponsiveContainer
+  if (fixedSize) {
+    return (
+      <div style={{ width: fixedSize.width, height: fixedSize.height }}>
+        <ChartContainer config={shadcnConfig} className="h-full w-full">
+          {content}
+        </ChartContainer>
+      </div>
+    );
+  }
+
+  // Use ChartContainer for normal display (includes ResponsiveContainer)
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      {renderChart()}
-    </ResponsiveContainer>
+    <ChartContainer config={shadcnConfig} className="h-[400px] w-full p-2">
+      {content}
+    </ChartContainer>
   );
 }

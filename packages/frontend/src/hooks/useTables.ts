@@ -26,6 +26,8 @@ interface TablesResponse {
 interface CreateTableRequest {
   file_id: string;
   table_name: string;
+  mode?: 'create' | 'append';
+  target_table?: string;
 }
 
 interface CreateTableResponse {

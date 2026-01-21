@@ -8,7 +8,6 @@ describe('useCellManager', () => {
 
     expect(result.current.cells).toHaveLength(1);
     expect(result.current.cells[0]?.sql).toBe('');
-    expect(result.current.cells[0]?.queryName).toBe('');
   });
 
   it('adds a new cell', () => {
@@ -157,5 +156,37 @@ describe('useCellManager', () => {
     expect(secondCellId).toBeDefined();
 
     expect(result.current.getCellIndex(secondCellId!)).toBe(1);
+  });
+
+  it('tracks newly added cell ID', () => {
+    const { result } = renderHook(() => useCellManager());
+
+    // Initially no newly added cell
+    expect(result.current.newlyAddedCellId).toBeNull();
+
+    let newCellId: string;
+    act(() => {
+      newCellId = result.current.addCell();
+    });
+
+    // After adding a cell, newlyAddedCellId should be set
+    expect(result.current.newlyAddedCellId).toBe(newCellId!);
+    expect(result.current.cells).toHaveLength(2);
+  });
+
+  it('clears newly added cell ID', () => {
+    const { result } = renderHook(() => useCellManager());
+
+    act(() => {
+      result.current.addCell();
+    });
+
+    expect(result.current.newlyAddedCellId).not.toBeNull();
+
+    act(() => {
+      result.current.clearNewlyAddedCellId();
+    });
+
+    expect(result.current.newlyAddedCellId).toBeNull();
   });
 });

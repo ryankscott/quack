@@ -23,6 +23,7 @@ export function useCellManager(initialCells: CellState[] = []) {
   const [cells, setCells] = useState<CellState[]>(
     initialCells.length > 0 ? initialCells : [createNewCell()]
   );
+  const [newlyAddedCellId, setNewlyAddedCellId] = useState<string | null>(null);
 
   function createNewCell(type: 'sql' | 'markdown' = 'sql'): CellState {
     return {
@@ -42,7 +43,12 @@ export function useCellManager(initialCells: CellState[] = []) {
       }
       return [...prev, newCell];
     });
+    setNewlyAddedCellId(newCell.id);
     return newCell.id;
+  }, []);
+
+  const clearNewlyAddedCellId = useCallback(() => {
+    setNewlyAddedCellId(null);
   }, []);
 
   const removeCell = useCallback((cellId: string) => {
@@ -106,6 +112,8 @@ export function useCellManager(initialCells: CellState[] = []) {
     moveCellDown,
     getCellIndex,
     setCellsDirectly,
+    newlyAddedCellId,
+    clearNewlyAddedCellId,
   };
 }
 

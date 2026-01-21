@@ -5,6 +5,8 @@ import { generateFileId, validateTableName } from '../utils/csv.js';
 interface CreateTableRequest {
   file_id: string;
   table_name: string;
+  mode?: 'create' | 'append';
+  target_table?: string;
 }
 
 interface TableMetadata {
@@ -15,9 +17,9 @@ interface TableMetadata {
 }
 
 export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
-  // POST /tables - Create table from file
+  // POST /tables - Create table from file or append to existing table
   fastify.post<{ Body: CreateTableRequest }>('/tables', async (request, reply) => {
-    const { file_id, table_name } = request.body;
+    const { file_id, table_name, mode = 'create', target_table } = request.body;
 
     // Validate inputs
     if (!file_id || !table_name) {
@@ -27,11 +29,27 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
         .send({ error: 'file_id and table_name are required' });
     }
 
-    if (!validateTableName(table_name)) {
-      return reply
-        .status(400)
-        .type('application/json')
-        .send({ error: 'Invalid table name. Use alphanumeric and underscore only.' });
+    if (mode === 'append') {
+      if (!target_table) {
+        return reply
+          .status(400)
+          .type('application/json')
+          .send({ error: 'target_table is required when mode is append' });
+      }
+
+      if (!validateTableName(target_table)) {
+        return reply
+          .status(400)
+          .type('application/json')
+          .send({ error: 'Invalid target_table name. Use alphanumeric and underscore only.' });
+      }
+    } else {
+      if (!validateTableName(table_name)) {
+        return reply
+          .status(400)
+          .type('application/json')
+          .send({ error: 'Invalid table name. Use alphanumeric and underscore only.' });
+      }
     }
 
     try {
@@ -47,28 +65,48 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
 
       const filePath = fileResult[0]!.path;
 
-      // Create table using read_csv_auto
-      await dbConnection.run(
-        `CREATE TABLE IF NOT EXISTS "${table_name}" AS SELECT * FROM read_csv_auto(?)`,
-        filePath
-      );
+      if (mode === 'append') {
+        // Validate that target table exists
+        const tableExists = await dbConnection.query<{ count: number }>(
+          `SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'main' AND table_name = ?`,
+          target_table
+        );
 
-      // Store table metadata
-      const tableId = generateFileId();
-      await dbConnection.run(
-        'INSERT INTO _tables (id, name, source_file_id) VALUES (?, ?, ?)',
-        tableId,
-        table_name,
-        file_id
-      );
+        if (tableExists[0]?.count === 0) {
+          return reply.status(404).type('application/json').send({ error: 'Target table not found' });
+        }
 
-      return reply.type('application/json').send({ table_id: tableId, table_name });
+        // Append data to existing table
+        await dbConnection.run(
+          `INSERT INTO "${target_table}" SELECT * FROM read_csv_auto(?)`,
+          filePath
+        );
+
+        return reply.type('application/json').send({ table_id: '', table_name: target_table });
+      } else {
+        // Create new table using read_csv_auto
+        await dbConnection.run(
+          `CREATE TABLE IF NOT EXISTS "${table_name}" AS SELECT * FROM read_csv_auto(?)`,
+          filePath
+        );
+
+        // Store table metadata
+        const tableId = generateFileId();
+        await dbConnection.run(
+          'INSERT INTO _tables (id, name, source_file_id) VALUES (?, ?, ?)',
+          tableId,
+          table_name,
+          file_id
+        );
+
+        return reply.type('application/json').send({ table_id: tableId, table_name });
+      }
     } catch (error) {
       fastify.log.error(error);
       return reply
         .status(500)
         .type('application/json')
-        .send({ error: `Failed to create table: ${(error as Error).message}` });
+        .send({ error: `Failed to ${mode === 'append' ? 'append to' : 'create'} table: ${(error as Error).message}` });
     }
   });
 
@@ -89,6 +127,44 @@ export async function tablesRoutes(fastify: FastifyInstance): Promise<void> {
         .send({ error: 'Failed to retrieve tables' } as unknown as { tables: TableMetadata[] });
     }
   });
+
+  // GET /tables/:tableName/schema - Get table schema
+  fastify.get<{ Params: { tableName: string } }>(
+    '/tables/:tableName/schema',
+    async (request, reply) => {
+      const { tableName } = request.params;
+
+      // Validate table name to prevent SQL injection
+      if (!validateTableName(tableName)) {
+        return reply.status(400).type('application/json').send({ error: 'Invalid table name' });
+      }
+
+      try {
+        // Get table schema using information_schema.columns
+        const schemaResult = await dbConnection.query<{ column_name: string; data_type: string }>(
+          `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'main' AND table_name = ? ORDER BY ordinal_position`,
+          tableName
+        );
+
+        if (schemaResult.length === 0) {
+          return reply.status(404).type('application/json').send({ error: 'Table not found' });
+        }
+
+        const columns = schemaResult.map((row) => ({
+          name: row.column_name,
+          type: row.data_type,
+        }));
+
+        return reply.type('application/json').send({ columns });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply
+          .status(500)
+          .type('application/json')
+          .send({ error: `Failed to get table schema: ${(error as Error).message}` });
+      }
+    }
+  );
 
   // GET /tables/:tableName/preview - Preview table data
   fastify.get<{ Params: { tableName: string }; Querystring: { limit?: string } }>(

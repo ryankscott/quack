@@ -1,9 +1,15 @@
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import type { CellState } from '@/hooks/useCellManager';
 import { Button } from './ui/button';
 import { ChevronDown, ChevronUp, Eye, EyeOff, Trash2Icon } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from './ui/collapsible';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+export interface MarkdownCellRef {
+  scrollIntoView: () => void;
+  focus: () => void;
+}
 
 interface MarkdownCellProps {
   cell: CellState;
@@ -15,19 +21,33 @@ interface MarkdownCellProps {
   onMoveDown?: () => void;
 }
 
-export function MarkdownCell({
-  cell,
-  cellIndex,
-  totalCells,
-  onUpdate,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-}: MarkdownCellProps) {
+export const MarkdownCell = forwardRef<MarkdownCellRef, MarkdownCellProps>(function MarkdownCell(
+  {
+    cell,
+    cellIndex,
+    totalCells,
+    onUpdate,
+    onRemove,
+    onMoveUp,
+    onMoveDown,
+  },
+  ref
+) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasPreview = !!cell.markdown?.trim();
 
+  useImperativeHandle(ref, () => ({
+    scrollIntoView: () => {
+      containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+    focus: () => {
+      textareaRef.current?.focus();
+    },
+  }));
+
   return (
-    <div className="bg-white border border-quack-dark border-opacity-10 rounded-lg shadow-sm mb-6">
+    <div ref={containerRef} className="bg-white border border-quack-dark border-opacity-10 rounded-lg shadow-sm mb-6">
       <div className="flex items-center justify-between p-2 border-b border-quack-dark border-opacity-10 bg-quack-gold bg-opacity-5">
         <div className="flex items-center gap-2">
           <div className="flex gap-2 px-2 items-center">
@@ -91,6 +111,7 @@ export function MarkdownCell({
           </div>
           <CollapsibleContent>
             <textarea
+              ref={textareaRef}
               value={cell.markdown}
               onChange={(e) => onUpdate({ markdown: e.target.value })}
               className="w-full min-h-[120px] border border-quack-dark border-opacity-10 rounded-md p-3 text-sm"
@@ -128,4 +149,4 @@ export function MarkdownCell({
       </div>
     </div>
   );
-}
+});

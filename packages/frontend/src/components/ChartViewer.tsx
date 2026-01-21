@@ -1,7 +1,6 @@
 import type { ChartConfig } from '@/lib/chart-config';
 import type { QueryResult } from '@/hooks/useQuery';
 import RechartsChart from './RechartsChart';
-import { ChartContainer } from './ui/chart';
 
 interface ChartViewerProps {
   config: ChartConfig;
@@ -9,9 +8,7 @@ interface ChartViewerProps {
 }
 
 export function ChartViewer({ config, result }: ChartViewerProps) {
-  return (
-    <ChartContainer>
-      <RechartsChart config={config} result={result} />
-    </ChartContainer>
-  );
+  return (<div className='w-full h-full p-8'>
+    <RechartsChart config={config} result={result} />
+  </div>)
 }
