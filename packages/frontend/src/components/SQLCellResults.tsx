@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { ResultTable } from './ResultTable';
 import { ChartViewer } from './ChartViewer';
 import { ChartConfigPanel } from './ChartConfig';
+import { SaveToTableDialog } from './SaveToTableDialog';
 import { Button } from './ui/button';
-import { Eye, EyeOff, Settings } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { Eye, EyeOff, Settings, Database } from 'lucide-react';
 import { CollapsibleContent } from './ui/collapsible';
 import type { QueryResult } from '@/hooks/useQuery';
 import type { ChartConfig } from '@/lib/chart-config';
@@ -13,9 +15,12 @@ interface SQLCellResultsProps {
   chartConfig: ChartConfig | null;
   isCollapsed?: boolean;
   displayMode?: 'table' | 'chart';
+  sql?: string;
+  allowedTables?: string[];
   onChartConfigChange: (config: ChartConfig) => void;
   onToggleCollapse?: () => void;
   onDisplayModeChange?: (mode: 'table' | 'chart') => void;
+  onTableCreated?: (tableName: string) => void;
 }
 
 /**
@@ -26,13 +31,17 @@ export function SQLCellResults({
   chartConfig,
   isCollapsed,
   displayMode = 'table',
+  sql,
+  allowedTables,
   onChartConfigChange,
   onToggleCollapse,
   onDisplayModeChange,
+  onTableCreated,
   cellId,
 }: SQLCellResultsProps & { cellId?: string }) {
   const showChart = displayMode === 'chart';
   const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(true);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
   return (
     <div className="mt-4" data-cell-id={cellId}>
@@ -47,44 +56,60 @@ export function SQLCellResults({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {onToggleCollapse && (
+          {/* Left side: Save to table button */}
+          {sql && (
             <Button
               variant="ghost"
               size="sm"
               className="h-7"
-              onClick={onToggleCollapse}
-              title={isCollapsed ? 'Show results' : 'Hide results'}
+              onClick={() => setIsSaveDialogOpen(true)}
+              title="Save query results to a new table"
             >
-              {isCollapsed ? <EyeOff size={14} /> : <Eye size={14} />}
-              <span className="ml-1 text-xs">{isCollapsed ? 'Show' : 'Hide'}</span>
+              <Database size={14} />
+              <span className="ml-1 text-xs">Save to table</span>
             </Button>
           )}
-          {showChart && chartConfig && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7"
-              onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)}
-              title={isConfigPanelOpen ? 'Hide configuration' : 'Show configuration'}
+
+          {/* Right side: Hide button, Configure button, and Table/Chart tabs */}
+          <div className="flex items-center gap-2 ml-auto">
+            {onToggleCollapse && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7"
+                onClick={onToggleCollapse}
+                title={isCollapsed ? 'Show results' : 'Hide results'}
+              >
+                {isCollapsed ? <EyeOff size={14} /> : <Eye size={14} />}
+                <span className="ml-1 text-xs">{isCollapsed ? 'Show' : 'Hide'}</span>
+              </Button>
+            )}
+            {showChart && chartConfig && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7"
+                onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)}
+                title={isConfigPanelOpen ? 'Hide configuration' : 'Show configuration'}
+              >
+                <Settings size={14} />
+                <span className="ml-1 text-xs">Configure</span>
+              </Button>
+            )}
+            <Tabs
+              value={displayMode}
+              onValueChange={(value) => onDisplayModeChange?.(value as 'table' | 'chart')}
             >
-              <Settings size={14} />
-              <span className="ml-1 text-xs">Configure</span>
-            </Button>
-          )}
-          <Button
-            onClick={() => onDisplayModeChange?.('table')}
-            variant={!showChart ? 'default' : 'outline'}
-            size="sm"
-          >
-            Table
-          </Button>
-          <Button
-            onClick={() => onDisplayModeChange?.('chart')}
-            variant={showChart ? 'default' : 'outline'}
-            size="sm"
-          >
-            Chart
-          </Button>
+              <TabsList className="h-7">
+                <TabsTrigger value="table" className="text-xs h-6 px-3">
+                  Table
+                </TabsTrigger>
+                <TabsTrigger value="chart" className="text-xs h-6 px-3">
+                  Chart
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
 
@@ -112,6 +137,20 @@ export function SQLCellResults({
           </div>
         )}
       </CollapsibleContent>
+
+      {/* Save to Table Dialog */}
+      {sql && (
+        <SaveToTableDialog
+          open={isSaveDialogOpen}
+          onOpenChange={setIsSaveDialogOpen}
+          sql={sql}
+          allowedTables={allowedTables}
+          onSuccess={(tableName, rowCount) => {
+            console.log(`Created table '${tableName}' with ${rowCount} rows`);
+            onTableCreated?.(tableName);
+          }}
+        />
+      )}
     </div>
   );
 }

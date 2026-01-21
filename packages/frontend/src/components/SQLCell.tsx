@@ -139,9 +139,18 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
               isCollapsed={cell.isPreviewCollapsed}
               displayMode={cell.displayMode}
               cellId={cell.id}
+              sql={cell.sql}
+              allowedTables={cell.selectedTables}
               onChartConfigChange={(config) => onUpdate({ chartConfig: config })}
               onToggleCollapse={() => onUpdate({ isPreviewCollapsed: !cell.isPreviewCollapsed })}
               onDisplayModeChange={(mode) => onUpdate({ displayMode: mode })}
+              onTableCreated={(tableName) => {
+                // Add the newly created table to this cell's selected tables
+                const currentTables = cell.selectedTables || [];
+                if (!currentTables.includes(tableName)) {
+                  onUpdate({ selectedTables: [...currentTables, tableName] });
+                }
+              }}
             />
           </Collapsible>
         )}

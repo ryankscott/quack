@@ -186,6 +186,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /query/save-to-table:
+    post:
+      summary: Save query results to a new table using CREATE TABLE AS SELECT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveToTableRequest'
+      responses:
+        '200':
+          description: Table created from query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveToTableResponse'
+        '400':
+          description: Invalid input, syntax error, or table already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /notebooks:
     post:
       summary: Create notebook
@@ -500,6 +528,38 @@ components:
             type: string
       required:
         - sql
+    SaveToTableRequest:
+      type: object
+      properties:
+        sql:
+          type: string
+          description: The SQL query whose results will be saved to the new table
+        table_name:
+          type: string
+          description: Name for the new table (will be used in CREATE TABLE AS)
+        description:
+          type: string
+          nullable: true
+          description: Optional description that will be saved as a table comment
+        allowed_tables:
+          type: array
+          items:
+            type: string
+          description: List of tables the query is allowed to access (for validation)
+      required:
+        - sql
+        - table_name
+    SaveToTableResponse:
+      type: object
+      properties:
+        table_name:
+          type: string
+        row_count:
+          type: integer
+          description: Number of rows inserted into the new table
+      required:
+        - table_name
+        - row_count
     QueryResultColumn:
       type: object
       properties:

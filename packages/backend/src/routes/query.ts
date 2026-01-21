@@ -3,6 +3,7 @@ import dbConnection from '../db/connection.js';
 import { formatQueryResult } from '../utils/query.js';
 import { QUERY_CONFIG } from '../config.js';
 import { validateTableAccess } from '../utils/query-validator.js';
+import { generateFileId } from '../utils/csv.js';
 
 class QueryTimeoutError extends Error {
   constructor(message: string) {
@@ -99,4 +100,98 @@ export async function queryRoutes(fastify: FastifyInstance): Promise<void> {
       }
     }
   );
+
+  fastify.post<{
+    Body: { sql?: string; table_name?: string; description?: string; allowed_tables?: string[] };
+  }>('/query/save-to-table', async (request, reply) => {
+    const { sql, table_name, description, allowed_tables } = request.body || {};
+
+    if (!sql || typeof sql !== 'string' || !sql.trim()) {
+      return reply.status(400).type('application/json').send({ error: 'SQL is required' });
+    }
+
+    if (!table_name || typeof table_name !== 'string' || !table_name.trim()) {
+      return reply.status(400).type('application/json').send({ error: 'table_name is required' });
+    }
+
+    const sanitizedSql = sanitizeSql(sql);
+    const sanitizedTableName = table_name.trim();
+
+    // Validate table name (alphanumeric and underscore only)
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sanitizedTableName)) {
+      return reply
+        .status(400)
+        .type('application/json')
+        .send({ error: 'Invalid table name. Use only letters, numbers, and underscores.' });
+    }
+
+    // Validate table access if allowed_tables is provided
+    if (allowed_tables && Array.isArray(allowed_tables)) {
+      const validation = validateTableAccess(sanitizedSql, allowed_tables);
+      if (!validation.valid) {
+        return reply.status(403).type('application/json').send({ error: validation.error });
+      }
+    }
+
+    try {
+      // Check if table already exists
+      const existingTables = await dbConnection.query<{ name: string }>(
+        "SELECT table_name as name FROM information_schema.tables WHERE table_schema = 'main'"
+      );
+
+      const tableExists = existingTables.some(
+        (t) => t.name.toLowerCase() === sanitizedTableName.toLowerCase()
+      );
+
+      if (tableExists) {
+        return reply
+          .status(400)
+          .type('application/json')
+          .send({ error: `Table '${sanitizedTableName}' already exists` });
+      }
+
+      // Create table from query results
+      const createTableSql = `CREATE TABLE "${sanitizedTableName}" AS ${sanitizedSql}`;
+      await dbConnection.run(createTableSql);
+
+      // Add table description as comment if provided
+      if (description && typeof description === 'string' && description.trim()) {
+        const commentSql = `COMMENT ON TABLE "${sanitizedTableName}" IS '${description.trim().replace(/'/g, "''")}'`;
+        await dbConnection.run(commentSql);
+      }
+
+      // Store table metadata so it appears in the tables list
+      const tableId = generateFileId();
+      await dbConnection.run(
+        'INSERT INTO _tables (id, name, source_file_id) VALUES (?, ?, ?)',
+        tableId,
+        sanitizedTableName,
+        null // No source file for query-generated tables
+      );
+
+      // Get row count
+      const countResult = await dbConnection.query<{ count: bigint | number }>(
+        `SELECT COUNT(*) as count FROM "${sanitizedTableName}"`
+      );
+      const rowCount = Number(countResult[0]?.count ?? 0);
+
+      return reply
+        .type('application/json')
+        .send({ table_name: sanitizedTableName, row_count: rowCount });
+    } catch (error) {
+      fastify.log.error(error);
+
+      const message = (error as Error)?.message ?? 'Unknown error';
+      const isSyntaxError = /syntax error|parser error/i.test(message);
+
+      if (isSyntaxError) {
+        return reply.status(400).type('application/json').send({ error: message });
+      }
+
+      return reply
+        .status(500)
+        .type('application/json')
+        .send({ error: 'Failed to create table from query' });
+    }
+  });
 }
