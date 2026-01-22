@@ -127,6 +127,35 @@ export function ChartConfigPanel({ config, result, onChange, onClose }: ChartCon
               </Select>
             </div>
 
+            {/* Group By Column - only for charts that support grouping */}
+            {configOptions.supportsGrouping && (
+              <div className="space-y-2">
+                <Label htmlFor="group-column" className="text-xs font-medium text-quack-dark">
+                  Group By
+                </Label>
+                <Select
+                  value={config.groupColumn || 'none'}
+                  onValueChange={(value) => 
+                    onChange({ ...config, groupColumn: value === 'none' ? undefined : value })
+                  }
+                >
+                  <SelectTrigger id="group-column" className="text-sm">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {columns
+                      .filter((col) => col !== config.xColumn && col !== config.yColumn)
+                      .map((col) => (
+                        <SelectItem key={col} value={col}>
+                          {col}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Show Legend */}
             <div className="space-y-2">
               <Label htmlFor="show-legend" className="text-xs font-medium text-quack-dark">
@@ -201,39 +230,6 @@ export function ChartConfigPanel({ config, result, onChange, onClose }: ChartCon
                 className="text-sm"
                 placeholder="Series Label"
               />
-            </div>
-
-            {/* Series Color */}
-            <div className="space-y-2">
-              <Label htmlFor="series-color" className="text-xs font-medium text-quack-dark">
-                Series Color
-              </Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="series-color"
-                  type="color"
-                  value={config.seriesConfig.color}
-                  onChange={(e) =>
-                    onChange({
-                      ...config,
-                      seriesConfig: { ...config.seriesConfig, color: e.target.value },
-                    })
-                  }
-                  className="h-9 w-16 cursor-pointer"
-                />
-                <Input
-                  type="text"
-                  value={config.seriesConfig.color}
-                  onChange={(e) =>
-                    onChange({
-                      ...config,
-                      seriesConfig: { ...config.seriesConfig, color: e.target.value },
-                    })
-                  }
-                  className="flex-1 text-sm"
-                  placeholder="#2563eb"
-                />
-              </div>
             </div>
           </div>
         </TabsContent>

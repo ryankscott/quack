@@ -1,4 +1,5 @@
 import type { ChartConfig } from '@/lib/chart-config';
+import { pivotDataForGrouping } from '@/lib/chart-config';
 import type { QueryResult } from '@/hooks/useQuery';
 import {
   BarChart,
@@ -23,6 +24,14 @@ import {
   ChartLegendContent,
   type ChartConfig as ShadcnChartConfig,
 } from '@/components/ui/chart';
+
+// Color palette for chart series
+const CHART_COLORS = ['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0891b2'];
+
+// Sanitize group names to create valid CSS variable names
+function sanitizeGroupName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
 
 function rowsToObjects(result: QueryResult): Record<string, any>[] {
   return result.rows.map((row) => {
@@ -55,16 +64,48 @@ export default function RechartsChart({
   fixedSize,
 }: RechartsChartProps) {
   const dataObjects = rowsToObjects(result);
-  const data = transformData(dataObjects, config.xColumn, config.yColumn);
 
-  // Build shadcn chart config for CSS variable injection
-  // Use 'y' as the key since that's what we use in the transformed data
-  const shadcnConfig: ShadcnChartConfig = {
-    y: {
-      label: config.seriesConfig.label,
-      color: config.seriesConfig.color,
-    },
-  };
+  // Check if we need to pivot data for grouping
+  const hasGrouping = config.groupColumn && (config.type === 'bar' || config.type === 'area');
+
+  let data: Record<string, any>[];
+  let groups: string[] = [];
+  let shadcnConfig: ShadcnChartConfig;
+
+  if (hasGrouping && config.groupColumn) {
+    // Pivot data for grouped charts
+    const pivoted = pivotDataForGrouping(
+      dataObjects,
+      config.xColumn,
+      config.yColumn,
+      config.groupColumn
+    );
+    data = pivoted.data;
+    groups = pivoted.groups;
+
+    // Build shadcn config with colors for each group
+    // Use sanitized group names as CSS variable keys
+    shadcnConfig = {};
+    groups.forEach((group, idx) => {
+      const sanitizedKey = sanitizeGroupName(group);
+      shadcnConfig[sanitizedKey] = {
+        label: group, // Use original name for label
+        color: CHART_COLORS[idx % CHART_COLORS.length],
+      };
+    });
+  } else {
+    // Transform data normally for non-grouped charts
+    data = transformData(dataObjects, config.xColumn, config.yColumn);
+
+    // Build shadcn chart config for CSS variable injection
+    // Use 'y' as the key since that's what we use in the transformed data
+    shadcnConfig = {
+      y: {
+        label: config.seriesConfig.label,
+        color: config.seriesConfig.color,
+      },
+    };
+  }
 
   const width = fixedSize?.width;
   const height = fixedSize?.height ?? 400;
@@ -72,15 +113,13 @@ export default function RechartsChart({
   // For pie charts, we need different config
   if (config.type === 'pie') {
     const pieData = data.map((d) => ({ name: String(d.x), value: d.y }));
-    // Generate colors for pie slices
-    const COLORS = ['#2563eb', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0891b2'];
 
     // Build config for each pie slice
     const pieConfig: ShadcnChartConfig = {};
     pieData.forEach((item, idx) => {
       pieConfig[item.name] = {
         label: item.name,
-        color: COLORS[idx % COLORS.length],
+        color: CHART_COLORS[idx % CHART_COLORS.length],
       };
     });
 
@@ -149,7 +188,22 @@ export default function RechartsChart({
             />
             <ChartTooltip content={<ChartTooltipContent />} />
             {config.showLegend && <ChartLegend content={<ChartLegendContent />} />}
-            <Bar dataKey="y" fill="var(--color-y)" radius={4} name={config.seriesConfig.label} />
+            {hasGrouping && groups.length > 0 ? (
+              // Render stacked bars for grouped data
+              groups.map((group) => (
+                <Bar
+                  key={group}
+                  dataKey={group}
+                  stackId="stack"
+                  fill={`var(--color-${sanitizeGroupName(group)})`}
+                  radius={4}
+                  name={group}
+                />
+              ))
+            ) : (
+              // Render single bar for non-grouped data
+              <Bar dataKey="y" fill="var(--color-y)" radius={4} name={config.seriesConfig.label} />
+            )}
           </BarChart>
         );
       case 'line':
@@ -197,14 +251,31 @@ export default function RechartsChart({
             />
             <ChartTooltip content={<ChartTooltipContent />} />
             {config.showLegend && <ChartLegend content={<ChartLegendContent />} />}
-            <Area
-              type="monotone"
-              dataKey="y"
-              stroke="var(--color-y)"
-              fill="var(--color-y)"
-              fillOpacity={0.2}
-              name={config.seriesConfig.label}
-            />
+            {hasGrouping && groups.length > 0 ? (
+              // Render stacked areas for grouped data
+              groups.map((group) => (
+                <Area
+                  key={group}
+                  type="monotone"
+                  dataKey={group}
+                  stackId="stack"
+                  stroke={`var(--color-${sanitizeGroupName(group)})`}
+                  fill={`var(--color-${sanitizeGroupName(group)})`}
+                  fillOpacity={0.6}
+                  name={group}
+                />
+              ))
+            ) : (
+              // Render single area for non-grouped data
+              <Area
+                type="monotone"
+                dataKey="y"
+                stroke="var(--color-y)"
+                fill="var(--color-y)"
+                fillOpacity={0.2}
+                name={config.seriesConfig.label}
+              />
+            )}
           </AreaChart>
         );
       case 'scatter':
