@@ -1,0 +1,13 @@
+# Tauri build artifacts
+src-tauri/target/
+
+# Built sidecar binaries (generated, not committed)
+src-tauri/binaries/quack-backend-*
+
+# Generated icons (should be committed after generation)
+# src-tauri/icons/*.png
+# src-tauri/icons/*.icns
+# src-tauri/icons/*.ico
+
+# Node modules
+node_modules/

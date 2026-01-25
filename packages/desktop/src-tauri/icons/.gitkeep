@@ -1,0 +1,12 @@
+# Icon files should be generated from the SVG source
+# Required formats:
+# - 32x32.png
+# - 128x128.png
+# - 128x128@2x.png (256x256)
+# - icon.icns (macOS)
+# - icon.ico (Windows)
+#
+# To generate icons from the SVG, you can use:
+# npx @aspect-build/rules_js//tools:tauri-cli icon packages/frontend/public/quack_icon.svg
+# or
+# pnpm tauri icon packages/frontend/public/quack_icon.svg

@@ -7,6 +7,7 @@ import { filesRoutes } from './routes/files.js';
 import { tablesRoutes } from './routes/tables.js';
 import { queryRoutes } from './routes/query.js';
 import { notebooksRoutes } from './routes/notebooks.js';
+import { getDataDir, DB_CONFIG, FILE_CONFIG } from './config.js';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -76,6 +77,12 @@ async function start() {
   const fastify = await buildServer();
 
   try {
+    // Log configuration
+    fastify.log.info(`Data directory: ${getDataDir()}`);
+    fastify.log.info(`Database path: ${DB_CONFIG.DB_PATH}`);
+    fastify.log.info(`Upload directory: ${FILE_CONFIG.UPLOAD_DIR}`);
+    fastify.log.info(`Export directory: ${FILE_CONFIG.EXPORT_DIR}`);
+
     // Initialize database connection and schema
     await dbConnection.initialize();
     await initializeSchema();

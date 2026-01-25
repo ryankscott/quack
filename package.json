@@ -1,5 +1,5 @@
 {
-  "name": "duck-bi",
+  "name": "quack",
   "version": "0.1.0",
   "private": true,
   "description": "Local-first DuckDB-backed BI workspace",
@@ -9,7 +9,11 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "generate:types": "openapi-typescript openapi.yaml -o packages/frontend/src/lib/api-types.ts"
+    "generate:types": "openapi-typescript openapi.yaml -o packages/frontend/src/lib/api-types.ts",
+    "tauri:dev": "pnpm --filter @quack/desktop tauri dev",
+    "tauri:build": "pnpm build:sidecar && pnpm --filter @quack/desktop tauri build",
+    "build:sidecar": "pnpm --filter @quack/backend build:sidecar",
+    "tauri:icons": "pnpm --filter @quack/desktop icons"
   },
   "devDependencies": {
     "openapi-typescript": "^7.10.1",

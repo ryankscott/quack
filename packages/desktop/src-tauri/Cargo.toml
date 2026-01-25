@@ -1,0 +1,26 @@
+[package]
+name = "quack"
+version = "0.1.0"
+description = "A local-first DuckDB-backed web application for data exploration and SQL-based analytics"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "quack_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
