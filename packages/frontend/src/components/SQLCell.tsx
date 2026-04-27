@@ -104,8 +104,10 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
       <SQLCellHeader
         cellIndex={cellIndex}
         totalCells={totalCells}
+        title={cell.title}
         isExecuting={cell.isExecuting}
         selectedTables={cell.selectedTables || []}
+        onTitleChange={(title) => onUpdate({ title })}
         onTablesChange={(tables) => onUpdate({ selectedTables: tables })}
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
@@ -123,6 +125,8 @@ export const SQLCell = forwardRef<SQLCellRef, SQLCellProps>(function SQLCell(
             isSchemasLoading={isSchemasLoading}
             isExecuting={cell.isExecuting}
             isCollapsed={cell.isEditorCollapsed}
+            isSchemaCollapsed={cell.isSchemaCollapsed}
+            onToggleSchema={() => onUpdate({ isSchemaCollapsed: !cell.isSchemaCollapsed })}
             onSqlChange={(sql) => onUpdate({ sql })}
             onExecute={handleExecute}
             onToggleCollapse={() => onUpdate({ isEditorCollapsed: !cell.isEditorCollapsed })}

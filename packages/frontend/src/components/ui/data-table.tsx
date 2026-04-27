@@ -11,6 +11,7 @@ import {
 import { Button } from './button';
 
 export interface DataTableColumn {
+  id?: string;
   name: string;
   type?: string;
 }
@@ -37,7 +38,7 @@ export function DataTable({ data, pageSize = 20, footerInfo }: DataTableProps) {
     if (!data || data.columns.length === 0) return [];
 
     return data.columns.map((col, index) => ({
-      id: col.name,
+      id: col.id ?? col.name,
       header: col.name,
       accessorFn: (row) => row[index],
       cell: (info) => {
@@ -71,9 +72,9 @@ export function DataTable({ data, pageSize = 20, footerInfo }: DataTableProps) {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden border border-quack-dark border-opacity-10 rounded min-w-0">
-      <div className="flex-1 min-h-0 min-w-0 overflow-auto">
-        <table className="text-sm min-w-full">
+    <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden rounded border border-quack-dark border-opacity-10">
+      <div className="flex-1 min-h-0 min-w-0 max-w-full overflow-auto overscroll-contain">
+        <table className="min-w-full w-max text-sm">
           <thead className="bg-quack-gold_bg sticky top-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
@@ -117,12 +118,12 @@ export function DataTable({ data, pageSize = 20, footerInfo }: DataTableProps) {
         </table>
       </div>
 
-      <div className="p-3 border-t border-quack-dark border-opacity-10 bg-white flex items-center justify-between text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-quack-dark border-opacity-10 bg-white p-3 text-sm">
         <div className="text-quack-dark text-opacity-70">
           Showing {table.getRowModel().rows.length} of {data.rows.length} rows
           {footerInfo && ` ${footerInfo}`}
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2">
           <Button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}

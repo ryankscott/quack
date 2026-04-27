@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { useNotebooks, useDeleteNotebook, useCreateNotebook, type Notebook } from '../hooks/useNotebooks';
+import { NotebookText, Plus, Trash2 } from 'lucide-react';
+import { useNotebooks, useCreateNotebook, type Notebook } from '../hooks/useNotebooks';
 import { LoadingState, ErrorState } from './ui/loading-error';
 import { Button } from './ui/button';
 import {
@@ -14,16 +13,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 interface NotebooksListProps {
   currentNotebookId: string | null;
   onSelectNotebook: (notebook: Notebook) => void;
   onCreateNotebook: () => void;
+  onDeleteNotebook: (notebookId: string) => Promise<void>;
+  collapsed?: boolean;
 }
 
-export function NotebooksList({ currentNotebookId, onSelectNotebook, onCreateNotebook }: NotebooksListProps) {
+export function NotebooksList({
+  currentNotebookId,
+  onSelectNotebook,
+  onCreateNotebook,
+  onDeleteNotebook,
+  collapsed = false,
+}: NotebooksListProps) {
   const { data: notebooks, isLoading, error } = useNotebooks();
-  const deleteNotebookMutation = useDeleteNotebook();
   const createNotebookMutation = useCreateNotebook();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [notebookToDelete, setNotebookToDelete] = useState<string | null>(null);
@@ -38,10 +45,7 @@ export function NotebooksList({ currentNotebookId, onSelectNotebook, onCreateNot
     if (!notebookToDelete) return;
 
     try {
-      await deleteNotebookMutation.mutateAsync(notebookToDelete);
-      toast.success('Notebook deleted successfully');
-    } catch (error) {
-      toast.error(`Failed to delete notebook: ${(error as Error).message}`);
+      await onDeleteNotebook(notebookToDelete);
     } finally {
       setDeleteDialogOpen(false);
       setNotebookToDelete(null);
@@ -63,6 +67,40 @@ export function NotebooksList({ currentNotebookId, onSelectNotebook, onCreateNot
 
   if (error) {
     return <ErrorState error={error} title="Failed to load notebooks" />;
+  }
+
+  if (collapsed) {
+    return (
+      <div className="flex h-full flex-col items-center gap-2 p-2">
+        <Button
+          onClick={handleCreateNew}
+          variant="ghost"
+          size="icon"
+          title={createNotebookMutation.isPending ? 'Creating notebook...' : 'New notebook'}
+          disabled={createNotebookMutation.isPending}
+        >
+          <Plus size={16} />
+          <span className="sr-only">New notebook</span>
+        </Button>
+        <div className="flex w-full flex-1 flex-col items-center gap-2 overflow-y-auto pt-2">
+          {notebooks?.map((notebook) => (
+            <button
+              key={notebook.id}
+              onClick={() => onSelectNotebook(notebook)}
+              title={notebook.name}
+              className={cn(
+                'flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors',
+                currentNotebookId === notebook.id
+                  ? 'border-quack-orange bg-quack-gold_bg text-quack-dark'
+                  : 'border-quack-dark border-opacity-10 text-quack-dark text-opacity-70 hover:bg-quack-gold hover:bg-opacity-10'
+              )}
+            >
+              {notebook.name.trim().charAt(0).toUpperCase() || <NotebookText size={16} />}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

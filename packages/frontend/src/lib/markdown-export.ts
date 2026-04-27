@@ -42,6 +42,10 @@ export function generateMarkdownFromCells(notebookName: string, cells: CellState
 
   // Process each cell
   cells.forEach((cell, index) => {
+    if (cell.title.trim()) {
+      sections.push(`### ${cell.title}`);
+    }
+
     if (cell.type === 'markdown') {
       sections.push(cell.markdown || `<!-- markdown cell ${index + 1} -->`);
       return;

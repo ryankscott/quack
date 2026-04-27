@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, buildApiUrl, API_BASE_URL } from '@/lib/api-client';
 
 export interface NotebookCell {
   id: string;
   notebook_id: string;
   cell_index: number;
+  title: string | null;
   cell_type: string;
   sql_text: string | null;
   markdown_text: string | null;
@@ -30,6 +31,7 @@ export interface CreateNotebookRequest {
   markdown?: string;
   cells?: Array<{
     cell_type: string;
+    title?: string;
     sql_text?: string;
     markdown_text?: string;
     chart_config?: string;
@@ -42,6 +44,7 @@ export interface UpdateNotebookRequest {
   markdown?: string;
   cells?: Array<{
     cell_type: string;
+    title?: string;
     sql_text?: string;
     markdown_text?: string;
     chart_config?: string;
@@ -132,7 +135,11 @@ export function useDeleteNotebook() {
     mutationFn: async (id: string): Promise<void> => {
       await apiClient.delete<void>(`/notebooks/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedNotebookId) => {
+      queryClient.setQueryData<Notebook[]>(['notebooks'], (existing) =>
+        existing ? existing.filter((notebook) => notebook.id !== deletedNotebookId) : existing
+      );
+      queryClient.removeQueries({ queryKey: ['notebooks', deletedNotebookId] });
       queryClient.invalidateQueries({ queryKey: ['notebooks'] });
     },
   });
@@ -153,8 +160,7 @@ export function useExportNotebook() {
       chartImages?: Record<string, string>;
     }): Promise<Blob> => {
       // Export needs special handling to get blob response
-      const url = new URL(`/api/notebooks/${notebookId}/export`, window.location.origin);
-      const response = await fetch(url.toString(), {
+      const response = await fetch(buildApiUrl(API_BASE_URL, `/notebooks/${notebookId}/export`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ format, chartImages }),

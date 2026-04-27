@@ -1,12 +1,15 @@
 import { ChevronUp, ChevronDown, Trash2Icon } from 'lucide-react';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { TableSelector } from './TableSelector';
 
 interface SQLCellHeaderProps {
   cellIndex: number;
   totalCells: number;
+  title: string;
   isExecuting: boolean;
   selectedTables: string[];
+  onTitleChange: (title: string) => void;
   onTablesChange: (tables: string[]) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
@@ -19,8 +22,10 @@ interface SQLCellHeaderProps {
 export function SQLCellHeader({
   cellIndex,
   totalCells,
+  title,
   isExecuting,
   selectedTables,
+  onTitleChange,
   onTablesChange,
   onMoveUp,
   onMoveDown,
@@ -28,11 +33,15 @@ export function SQLCellHeader({
 }: SQLCellHeaderProps) {
   return (
     <div className="flex row justify-between align-center gap-2 p-2 w-full border-b border-quack-dark border-opacity-10 bg-quack-gold bg-opacity-5">
-      <div className='flex gap-2 items-center flex-wrap'>
-        <div className='flex gap-2 px-2 items-center'>
-          <p className="text-xs text-quack-dark text-opacity-60 font-mono">
-            Cell {cellIndex + 1}
-          </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-[220px] items-center gap-2 px-2">
+          <Input
+            value={title}
+            onChange={(event) => onTitleChange(event.target.value)}
+            placeholder={`SQL cell ${cellIndex + 1}`}
+            className="h-7 border-transparent bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-border focus-visible:ring-0"
+          />
+          <p className="text-xs text-quack-dark text-opacity-50">SQL</p>
           {isExecuting && <p className="text-xs text-quack-orange">Executing...</p>}
         </div>
         <TableSelector

@@ -9,6 +9,7 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "postinstall": "node scripts/prune-heavy-deps.cjs",
     "generate:types": "openapi-typescript openapi.yaml -o packages/frontend/src/lib/api-types.ts",
     "tauri:dev": "pnpm --filter @quack/desktop tauri dev",
     "tauri:build": "pnpm build:sidecar && pnpm --filter @quack/desktop tauri build",

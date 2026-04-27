@@ -9,6 +9,7 @@ describe('SQLCell', () => {
   it('renders editor', () => {
     const mockCell: CellState = {
       id: 'test-cell',
+      title: '',
       type: 'sql',
       sql: '',
       markdown: '',
@@ -34,6 +35,7 @@ describe('SQLCell', () => {
 
     const mockCell: CellState = {
       id: 'test-cell',
+      title: '',
       type: 'sql',
       sql: 'SELECT * FROM test',
       markdown: '',
@@ -111,6 +113,7 @@ describe('SQLCell', () => {
 
     const mockCell: CellState = {
       id: 'test-cell',
+      title: '',
       type: 'sql',
       sql: 'SELECT * FROM test',
       markdown: '',
@@ -149,6 +152,7 @@ describe('SQLCell', () => {
 
     const mockCell: CellState = {
       id: 'test-cell',
+      title: '',
       type: 'sql',
       sql: 'SELECT * FROM test',
       markdown: '',
@@ -180,5 +184,52 @@ describe('SQLCell', () => {
     fireEvent.click(resultsHideButton);
 
     expect(onUpdate).toHaveBeenCalledWith({ isPreviewCollapsed: true });
+  });
+
+  it('allows collapsing the schema panel from the cell toolbar', () => {
+    const onUpdate = vi.fn();
+
+    const mockCell: CellState = {
+      id: 'test-cell',
+      title: '',
+      type: 'sql',
+      sql: 'SELECT * FROM orders',
+      markdown: '',
+      isExecuting: false,
+      selectedTables: ['orders'],
+      isSchemaCollapsed: false,
+    };
+
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <SQLCell
+          cell={mockCell}
+          cellIndex={0}
+          totalCells={1}
+          onUpdate={onUpdate}
+          onRemove={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText('Schema')).toBeTruthy();
+
+    fireEvent.click(screen.getByTitle('Hide schema'));
+    expect(onUpdate).toHaveBeenCalledWith({ isSchemaCollapsed: true });
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <SQLCell
+          cell={{ ...mockCell, isSchemaCollapsed: true }}
+          cellIndex={0}
+          totalCells={1}
+          onUpdate={vi.fn()}
+          onRemove={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.queryByText('Schema')).toBeNull();
+    expect(screen.getByTitle('Show schema')).toBeTruthy();
   });
 });

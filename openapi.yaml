@@ -5,7 +5,7 @@ info:
   title: Quack API
   description: Local-first DuckDB-backed API for file ingestion and SQL execution.
 servers:
-  - url: http://localhost:3001
+  - url: http://127.0.0.1:3210
 paths:
   /health:
     get:
@@ -55,6 +55,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileListResponse'
+  /files/{fileId}/schema:
+    get:
+      summary: Inspect CSV columns and sample rows for an uploaded file
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV schema and preview rows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileSchemaResponse'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /files/{fileId}:
+    delete:
+      summary: Delete an uploaded file
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /tables:
     post:
       summary: Create table from uploaded file or append to existing table
@@ -92,6 +136,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TableListResponse'
+  /tables/{tableName}:
+    delete:
+      summary: Delete a table
+      parameters:
+        - name: tableName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Table deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '400':
+          description: Invalid table name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Table not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /tables/{tableName}/schema:
     get:
       summary: Get table schema (column names and types)
@@ -428,6 +500,41 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileMetadata'
+    CsvColumn:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+      required:
+        - name
+        - type
+    FileSchemaResponse:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/CsvColumn'
+        preview_rows:
+          type: array
+          items:
+            type: array
+            items: {}
+      required:
+        - columns
+        - preview_rows
+    ColumnMapping:
+      type: object
+      properties:
+        source_name:
+          type: string
+        target_name:
+          type: string
+          description: Defaults to source_name when omitted
+      required:
+        - source_name
     CreateTableRequest:
       type: object
       properties:
@@ -443,9 +550,13 @@ components:
         target_table:
           type: string
           description: Required when mode is append, specifies the existing table to append to
+        column_mappings:
+          type: array
+          description: Optional subset of CSV columns to import, with optional renaming.
+          items:
+            $ref: '#/components/schemas/ColumnMapping'
       required:
         - file_id
-        - table_name
     CreateTableResponse:
       type: object
       properties:
@@ -482,12 +593,7 @@ components:
         columns:
           type: array
           items:
-            type: object
-            properties:
-              name:
-                type: string
-              type:
-                type: string
+            $ref: '#/components/schemas/CsvColumn'
       required:
         - columns
     TablePreview:
@@ -496,12 +602,7 @@ components:
         columns:
           type: array
           items:
-            type: object
-            properties:
-              name:
-                type: string
-              type:
-                type: string
+            $ref: '#/components/schemas/CsvColumn'
         rows:
           type: array
           items:
@@ -618,6 +719,9 @@ components:
           type: string
         cell_index:
           type: integer
+        title:
+          type: string
+          nullable: true
         cell_type:
           type: string
           enum: [sql, markdown]
@@ -685,6 +789,8 @@ components:
               cell_type:
                 type: string
                 enum: [sql, markdown]
+              title:
+                type: string
               sql_text:
                 type: string
               markdown_text:
@@ -712,6 +818,8 @@ components:
               cell_type:
                 type: string
                 enum: [sql, markdown]
+              title:
+                type: string
               sql_text:
                 type: string
               markdown_text:
@@ -737,6 +845,13 @@ components:
           nullable: true
       required:
         - format
+    DeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
     ErrorResponse:
       type: object
       properties:

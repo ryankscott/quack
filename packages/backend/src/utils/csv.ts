@@ -1,8 +1,8 @@
-import { createHash } from 'crypto';
+import { randomBytes } from 'crypto';
 import { basename } from 'path';
 
 export function generateFileId(): string {
-  return createHash('sha256').update(Date.now().toString()).digest('hex').slice(0, 16);
+  return randomBytes(8).toString('hex');
 }
 
 export function validateTableName(name: string): boolean {

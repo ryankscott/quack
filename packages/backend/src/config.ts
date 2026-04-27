@@ -38,9 +38,11 @@ export const QUERY_CONFIG = {
 /**
  * Database settings
  */
+const DEFAULT_DB_PATH = process.env.VITEST ? ':memory:' : path.join(DATA_DIR, 'quack.duckdb');
+
 export const DB_CONFIG = {
   /** Database file path */
-  DB_PATH: process.env.DB_PATH || path.join(DATA_DIR, 'quack.duckdb'),
+  DB_PATH: process.env.DB_PATH || DEFAULT_DB_PATH,
 } as const;
 
 /**

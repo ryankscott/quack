@@ -4,6 +4,7 @@ import type { ChartConfig } from '@/lib/chart-config';
 
 export interface CellState {
   id: string;
+  title: string;
   type: 'sql' | 'markdown';
   sql: string;
   markdown: string;
@@ -14,6 +15,7 @@ export interface CellState {
   chartImageUrl?: string;
   isEditorCollapsed?: boolean;
   isPreviewCollapsed?: boolean;
+  isSchemaCollapsed?: boolean;
   selectedTables?: string[];
   /** Display mode for results: 'table' or 'chart'. Defaults to 'table'. */
   displayMode?: 'table' | 'chart';
@@ -28,6 +30,7 @@ export function useCellManager(initialCells: CellState[] = []) {
   function createNewCell(type: 'sql' | 'markdown' = 'sql'): CellState {
     return {
       id: generateId(),
+      title: '',
       type,
       sql: '',
       markdown: '',

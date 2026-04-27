@@ -28,6 +28,10 @@ interface CreateTableRequest {
   table_name: string;
   mode?: 'create' | 'append';
   target_table?: string;
+  column_mappings?: Array<{
+    source_name: string;
+    target_name?: string;
+  }>;
 }
 
 interface CreateTableResponse {
@@ -42,6 +46,10 @@ async function fetchTables(): Promise<TableMetadata[]> {
 
 async function createTable(request: CreateTableRequest): Promise<CreateTableResponse> {
   return apiClient.post<CreateTableResponse>('/tables', request);
+}
+
+async function deleteTable(tableName: string): Promise<void> {
+  await apiClient.delete<{ success: boolean }>(`/tables/${encodeURIComponent(tableName)}`);
 }
 
 async function fetchTablePreview(tableName: string, limit = 100): Promise<TablePreview> {
@@ -64,6 +72,19 @@ export function useCreateTable() {
     mutationFn: createTable,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tables'] });
+    },
+  });
+}
+
+export function useDeleteTable() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteTable,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tables'] });
+      queryClient.invalidateQueries({ queryKey: ['tablePreview'] });
+      queryClient.invalidateQueries({ queryKey: ['tableSchema'] });
     },
   });
 }

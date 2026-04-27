@@ -8,6 +8,7 @@ describe('useCellManager', () => {
 
     expect(result.current.cells).toHaveLength(1);
     expect(result.current.cells[0]?.sql).toBe('');
+    expect(result.current.cells[0]?.title).toBe('');
   });
 
   it('adds a new cell', () => {
@@ -65,6 +66,19 @@ describe('useCellManager', () => {
     });
 
     expect(result.current.cells[0]?.sql).toBe('SELECT 1');
+  });
+
+  it('updates a cell title', () => {
+    const { result } = renderHook(() => useCellManager());
+
+    const cellId = result.current.cells[0]?.id;
+    expect(cellId).toBeDefined();
+
+    act(() => {
+      result.current.updateCell(cellId!, { title: 'Revenue query' });
+    });
+
+    expect(result.current.cells[0]?.title).toBe('Revenue query');
   });
 
   it('moves a cell up', () => {

@@ -35,29 +35,6 @@ Quack - A local-first DuckDB-backed web application for data exploration and SQL
 
 ## Development Workflow
 
-### PR Strategy: Stacked PRs
-
-This project uses a **stacked PR pattern** to enable incremental, testable progress:
-
-1. **Feature Branch Hierarchy**: Each PR is based on the previous one, forming a stack.
-2. **Atomic Changes**: Each PR introduces one complete, deployable feature or subsystem.
-3. **Testing**: Every PR is independently testable before merging to main.
-4. **Review Flow**: Review and merge bottom-up; higher PRs rebase on changes.
-
-Example stack:
-```
-main
-  ↑ PR #1: Backend scaffold (Fastify + DuckDB setup)
-  ↑ PR #2: File upload + CSV ingestion
-  ↑ PR #3: SQL query execution endpoint
-  ↑ PR #4: Frontend scaffold (Vite + React setup)
-  ↑ PR #5: Data explorer UI
-  ↑ PR #6: SQL editor and execution
-  ↑ PR #7: Table visualization
-  ↑ PR #8: Query persistence
-  ↑ PR #9: Chart rendering
-```
-
 ### Code Quality Standards
 
 - **Type Safety**: Strict TypeScript, no `any`
@@ -94,8 +71,8 @@ quack/
 │       │   ├── main.tsx
 │       │   ├── App.tsx
 │       │   ├── routes/
-│       │   │   ├── explorer.tsx
-│       │   │   └── workspace.tsx
+│       │   │   ├── data.tsx
+│       │   │   └── notebooks.tsx
 │       │   ├── components/
 │       │   │   ├── FileUpload.tsx
 │       │   │   ├── TableList.tsx
@@ -125,6 +102,7 @@ quack/
 
 ## Coding standards
 ### General
+- Always create a plan first; save it to the /plans/ directory for future reference.
 - Prefer using libraries rather than implementing from scratch
 - Write clear, concise, and maintainable code
 - Always run `pnpm test` after modifying JavaScript files.
@@ -142,6 +120,7 @@ quack/
 - Always use TypeScript types generated from OpenAPI for API interactions
 - Prefer functional components and React best practices
 - Use lucide-react for icons
+- Prefer icon-only lucide-react buttons for compact import actions in dense lists or toolbars
 
 ### Backend 
    
@@ -161,4 +140,3 @@ quack/
 - **Performance**: Avoid N+1 queries; batch metadata reads where possible.
 - **Error Handling**: Provide meaningful error messages from backend; handle gracefully on frontend.
 - **Type Generation**: Auto-generate TypeScript types from OpenAPI for frontend API client.
-

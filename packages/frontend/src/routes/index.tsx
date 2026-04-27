@@ -1,7 +1,11 @@
-import { RootRoute, Router, Route, Outlet } from '@tanstack/react-router';
+import { RootRoute, Router, Route, Outlet, Navigate } from '@tanstack/react-router';
 import { Layout } from '@/components/Layout';
-import { ExplorerPage } from './explorer';
-import { WorkspacePage } from './workspace';
+import { DataPage } from './data';
+import { NotebooksPage } from './notebooks';
+
+interface NotebooksSearch {
+  notebookId?: string;
+}
 
 const rootRoute = new RootRoute({
   component: () => (
@@ -14,40 +18,25 @@ const rootRoute = new RootRoute({
 const indexRoute = new Route({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-quack-golden bg-opacity-20">
-        <img src="/quack_icon.svg" alt="Quack" className="w-48 h-48 mb-8" />
-        <h2 className="text-4xl font-bold mb-2 text-quack-dark">Welcome to Quack</h2>
-        <p className="text-quack-dark text-opacity-70 mb-8 text-center max-w-md">
-          A local-first data exploration tool. Upload CSV files and query them with SQL.
-        </p>
-        <div className="flex gap-4">
-          <a href="/explorer" className="btn-primary rounded-lg font-medium">
-            Start Exploring
-          </a>
-          <a href="/workspace" className="btn-secondary rounded-lg font-medium">
-            View Workspace
-          </a>
-        </div>
-      </div>
-    );
-  },
+  component: () => <Navigate to="/data" />,
 });
 
-const explorerRoute = new Route({
+const dataRoute = new Route({
   getParentRoute: () => rootRoute,
-  path: '/explorer',
-  component: ExplorerPage,
+  path: '/data',
+  component: DataPage,
 });
 
-const workspaceRoute = new Route({
+const notebooksRoute = new Route({
   getParentRoute: () => rootRoute,
-  path: '/workspace',
-  component: WorkspacePage,
+  path: '/notebooks',
+  validateSearch: (search: Record<string, unknown>): NotebooksSearch => ({
+    notebookId: typeof search.notebookId === 'string' ? search.notebookId : undefined,
+  }),
+  component: NotebooksPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, explorerRoute, workspaceRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, dataRoute, notebooksRoute]);
 
 export const router = new Router({ routeTree });
 

@@ -38,6 +38,7 @@ export async function initializeSchema(): Promise<void> {
       id TEXT PRIMARY KEY,
       notebook_id TEXT NOT NULL,
       cell_index INTEGER NOT NULL,
+      title TEXT,
       cell_type TEXT NOT NULL,
       sql_text TEXT,
       markdown_text TEXT,
@@ -51,6 +52,10 @@ export async function initializeSchema(): Promise<void> {
   // Add selected_tables column if it doesn't exist (migration for existing databases)
   await dbConnection.run(`
     ALTER TABLE _notebook_cells ADD COLUMN IF NOT EXISTS selected_tables TEXT;
+  `);
+
+  await dbConnection.run(`
+    ALTER TABLE _notebook_cells ADD COLUMN IF NOT EXISTS title TEXT;
   `);
 
   // Create junction table to track table-cell relationships

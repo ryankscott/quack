@@ -73,18 +73,18 @@ export function extractTableReferences(sql: string): string[] {
  * Validate that all tables referenced in SQL are in the allowed list
  */
 export function validateTableAccess(sql: string, allowedTables: string[]): { valid: boolean; error?: string } {
-  if (allowedTables.length === 0) {
-    return {
-      valid: false,
-      error: 'No tables are selected for this cell. Please select at least one table.',
-    };
-  }
-
   const referencedTables = extractTableReferences(sql);
 
   if (referencedTables.length === 0) {
     // Queries without table references (e.g., SELECT 1) are allowed
     return { valid: true };
+  }
+
+  if (allowedTables.length === 0) {
+    return {
+      valid: false,
+      error: 'No tables are selected for this cell. Please select at least one table.',
+    };
   }
 
   const allowedSet = new Set(allowedTables.map((t) => t.toLowerCase()));

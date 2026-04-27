@@ -2,11 +2,15 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
 import { queryRoutes } from './query.js';
 import dbConnection from '../db/connection.js';
+import { initializeSchema } from '../db/schema.js';
 
 describe('Save Query to Table Route', () => {
   let server: FastifyInstance;
 
   beforeAll(async () => {
+    await dbConnection.initialize();
+    await initializeSchema();
+
     server = Fastify();
     await server.register(queryRoutes);
 

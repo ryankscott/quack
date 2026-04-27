@@ -78,4 +78,13 @@ describe('Database Schema', () => {
     `);
     expect(result).toHaveLength(1);
   });
+
+  it('should include a title column for notebook cells', async () => {
+    const result = await dbConnection.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = '_notebook_cells' AND column_name = 'title'
+    `);
+    expect(result).toHaveLength(1);
+  });
 });

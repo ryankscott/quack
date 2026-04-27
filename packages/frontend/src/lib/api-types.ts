@@ -128,6 +128,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/files/{fileId}/schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect CSV columns and sample rows for an uploaded file */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description CSV schema and preview rows */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FileSchemaResponse"];
+                    };
+                };
+                /** @description File not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an uploaded file */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description File deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeleteResponse"];
+                    };
+                };
+                /** @description File not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tables": {
         parameters: {
             query?: never;
@@ -157,7 +251,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Create table from uploaded file */
+        /** Create table from uploaded file or append to existing table */
         post: {
             parameters: {
                 query?: never;
@@ -171,7 +265,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Table created */
+                /** @description Table created or data appended */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -189,7 +283,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description File not found */
+                /** @description File or table not found */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -200,6 +294,118 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tables/{tableName}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a table */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tableName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Table deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeleteResponse"];
+                    };
+                };
+                /** @description Invalid table name */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Table not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tables/{tableName}/schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get table schema (column names and types) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tableName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Table schema */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TableSchema"];
+                    };
+                };
+                /** @description Invalid table name */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Table not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -300,6 +506,64 @@ export interface paths {
                 };
                 /** @description Query timeout */
                 408: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/query/save-to-table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save query results to a new table using CREATE TABLE AS SELECT */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveToTableRequest"];
+                };
+            };
+            responses: {
+                /** @description Table created from query results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SaveToTableResponse"];
+                    };
+                };
+                /** @description Invalid input, syntax error, or table already exists */
+                400: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -519,7 +783,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Export notebook to portable .quackdb file */
+        /** Export notebook as markdown or .quackdb file */
         post: {
             parameters: {
                 query?: never;
@@ -541,10 +805,13 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
+                        /** @description Markdown file when format=markdown */
+                        "text/markdown": string;
+                        /** @description .quackdb file when format=quackdb */
                         "application/octet-stream": string;
                     };
                 };
-                /** @description Invalid input or dataMode */
+                /** @description Invalid input or format */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -645,9 +912,32 @@ export interface components {
         FileListResponse: {
             files?: components["schemas"]["FileMetadata"][];
         };
+        CsvColumn: {
+            name: string;
+            type: string;
+        };
+        FileSchemaResponse: {
+            columns: components["schemas"]["CsvColumn"][];
+            preview_rows: unknown[][];
+        };
+        ColumnMapping: {
+            source_name: string;
+            /** @description Defaults to source_name when omitted */
+            target_name?: string;
+        };
         CreateTableRequest: {
             file_id: string;
-            table_name: string;
+            table_name?: string;
+            /**
+             * @description create to create a new table, append to append to existing table
+             * @default create
+             * @enum {string}
+             */
+            mode: "create" | "append";
+            /** @description Required when mode is append, specifies the existing table to append to */
+            target_table?: string;
+            /** @description Optional subset of CSV columns to import, with optional renaming. */
+            column_mappings?: components["schemas"]["ColumnMapping"][];
         };
         CreateTableResponse: {
             table_id: string;
@@ -663,11 +953,11 @@ export interface components {
         TableListResponse: {
             tables?: components["schemas"]["TableMetadata"][];
         };
+        TableSchema: {
+            columns: components["schemas"]["CsvColumn"][];
+        };
         TablePreview: {
-            columns: {
-                name?: string;
-                type?: string;
-            }[];
+            columns: components["schemas"]["CsvColumn"][];
             rows: unknown[][];
             row_count: number;
         };
@@ -675,6 +965,22 @@ export interface components {
             sql: string;
             /** @default 1000 */
             limit: number;
+            allowed_tables?: string[];
+        };
+        SaveToTableRequest: {
+            /** @description The SQL query whose results will be saved to the new table */
+            sql: string;
+            /** @description Name for the new table (will be used in CREATE TABLE AS) */
+            table_name: string;
+            /** @description Optional description that will be saved as a table comment */
+            description?: string | null;
+            /** @description List of tables the query is allowed to access (for validation) */
+            allowed_tables?: string[];
+        };
+        SaveToTableResponse: {
+            table_name: string;
+            /** @description Number of rows inserted into the new table */
+            row_count: number;
         };
         QueryResultColumn: {
             name?: string;
@@ -699,11 +1005,13 @@ export interface components {
             id: string;
             notebook_id: string;
             cell_index: number;
+            title?: string | null;
             /** @enum {string} */
             cell_type: "sql" | "markdown";
             sql_text?: string | null;
             markdown_text?: string | null;
             chart_config?: string | null;
+            selected_tables?: string[] | null;
             /** Format: date-time */
             created_at: string;
         };
@@ -723,9 +1031,11 @@ export interface components {
             cells?: {
                 /** @enum {string} */
                 cell_type?: "sql" | "markdown";
+                title?: string;
                 sql_text?: string;
                 markdown_text?: string;
                 chart_config?: string;
+                selected_tables?: string[];
             }[];
         };
         UpdateNotebookRequest: {
@@ -734,17 +1044,26 @@ export interface components {
             cells?: {
                 /** @enum {string} */
                 cell_type?: "sql" | "markdown";
+                title?: string;
                 sql_text?: string;
                 markdown_text?: string;
                 chart_config?: string;
+                selected_tables?: string[];
             }[];
         };
         ExportRequest: {
             /**
-             * @default query-results
+             * @default quackdb
              * @enum {string}
              */
-            dataMode: "none" | "query-results" | "referenced-tables" | "full-db";
+            format: "markdown" | "quackdb";
+            /** @description Map of cell ID to base64 PNG image data URL (for markdown export) */
+            chartImages?: {
+                [key: string]: string;
+            } | null;
+        };
+        DeleteResponse: {
+            success: boolean;
         };
         ErrorResponse: {
             error: string;

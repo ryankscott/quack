@@ -1,16 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { createWriteStream, mkdir } from 'fs';
+import { unlink } from 'fs/promises';
 import { join } from 'path';
 import { pipeline } from 'stream/promises';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import dbConnection from '../db/connection.js';
+import { FILE_CONFIG } from '../config.js';
 import { generateFileId } from '../utils/csv.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const UPLOAD_DIR = join(__dirname, '../../..', 'data', 'uploads');
+import { getCsvColumns, getCsvPreviewRows } from '../services/csvIngestionService.js';
 
 interface FileMetadata {
   id: string;
@@ -21,7 +17,7 @@ interface FileMetadata {
 
 export async function filesRoutes(fastify: FastifyInstance): Promise<void> {
   // Ensure upload directory exists
-  mkdir(UPLOAD_DIR, { recursive: true }, (err) => {
+  mkdir(FILE_CONFIG.UPLOAD_DIR, { recursive: true }, (err) => {
     if (err) fastify.log.error(`Failed to create upload directory: ${err}`);
   });
 
@@ -36,7 +32,7 @@ export async function filesRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       const fileId = generateFileId();
-      const uploadPath = join(UPLOAD_DIR, `${fileId}_${file.filename}`);
+      const uploadPath = join(FILE_CONFIG.UPLOAD_DIR, `${fileId}_${file.filename}`);
 
       try {
         // Save file to disk
@@ -72,6 +68,77 @@ export async function filesRoutes(fastify: FastifyInstance): Promise<void> {
         .status(500)
         .type('application/json')
         .send({ error: 'Failed to retrieve files' } as unknown as { files: FileMetadata[] });
+    }
+  });
+
+  // GET /files/:fileId/schema
+  fastify.get<{ Params: { fileId: string } }>('/files/:fileId/schema', async (request, reply) => {
+    const { fileId } = request.params;
+
+    try {
+      const fileRows = await dbConnection.query<{ path: string }>(
+        'SELECT path FROM _files WHERE id = ?',
+        fileId
+      );
+
+      if (fileRows.length === 0) {
+        return reply.status(404).type('application/json').send({ error: 'File not found' });
+      }
+
+      const filePath = fileRows[0]!.path;
+      const [columns, previewRows] = await Promise.all([
+        getCsvColumns(filePath),
+        getCsvPreviewRows(filePath),
+      ]);
+
+      return reply.type('application/json').send({
+        columns,
+        preview_rows: previewRows,
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply
+        .status(500)
+        .type('application/json')
+        .send({ error: `Failed to inspect file: ${(error as Error).message}` });
+    }
+  });
+
+  // DELETE /files/:fileId
+  fastify.delete<{ Params: { fileId: string } }>('/files/:fileId', async (request, reply) => {
+    const { fileId } = request.params;
+
+    try {
+      const fileRows = await dbConnection.query<{ path: string }>(
+        'SELECT path FROM _files WHERE id = ?',
+        fileId
+      );
+
+      if (fileRows.length === 0) {
+        return reply.status(404).type('application/json').send({ error: 'File not found' });
+      }
+
+      const filePath = fileRows[0]!.path;
+
+      await dbConnection.run('UPDATE _tables SET source_file_id = NULL WHERE source_file_id = ?', fileId);
+      await dbConnection.run('DELETE FROM _files WHERE id = ?', fileId);
+
+      try {
+        await unlink(filePath);
+      } catch (error) {
+        const unlinkError = error as NodeJS.ErrnoException;
+        if (unlinkError.code !== 'ENOENT') {
+          fastify.log.warn({ err: unlinkError, fileId, filePath }, 'Failed to delete uploaded file from disk');
+        }
+      }
+
+      return reply.type('application/json').send({ success: true });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply
+        .status(500)
+        .type('application/json')
+        .send({ error: `Failed to delete file: ${(error as Error).message}` });
     }
   });
 }

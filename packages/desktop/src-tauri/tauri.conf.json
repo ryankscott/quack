@@ -4,7 +4,7 @@
   "identifier": "com.quack.app",
   "version": "0.1.0",
   "build": {
-    "beforeDevCommand": "pnpm --filter @quack/frontend dev",
+    "beforeDevCommand": "pnpm dev:stack",
     "beforeBuildCommand": "pnpm --filter @quack/frontend build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../../frontend/dist"

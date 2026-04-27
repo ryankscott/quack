@@ -9,8 +9,8 @@ import { queryRoutes } from './routes/query.js';
 import { notebooksRoutes } from './routes/notebooks.js';
 import { getDataDir, DB_CONFIG, FILE_CONFIG } from './config.js';
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3210;
+const HOST = process.env.HOST || '127.0.0.1';
 
 // Handle BigInt serialization globally
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,14 +98,15 @@ async function start() {
 
   // Graceful shutdown
   const signals = ['SIGINT', 'SIGTERM'];
-  signals.forEach((signal) => {
-    process.on(signal, async () => {
-      fastify.log.info(`Received ${signal}, closing server...`);
-      try {
-        await fastify.close();
-        await dbConnection.close();
-        fastify.log.info('Server closed successfully');
-        process.exit(0);
+    signals.forEach((signal) => {
+      process.on(signal, async () => {
+        fastify.log.info(`Received ${signal}, closing server...`);
+        try {
+          await fastify.close();
+          await dbConnection.run('CHECKPOINT');
+          await dbConnection.close();
+          fastify.log.info('Server closed successfully');
+          process.exit(0);
       } catch (err) {
         fastify.log.error('Error during shutdown:');
         process.exit(1);

@@ -31,6 +31,8 @@ quack/
 pnpm install
 ```
 
+`pnpm install` runs a postinstall prune step that removes bulky DuckDB compile artifacts after installation, keeping the local `.pnpm` footprint much smaller without removing the runtime binary.
+
 ### Development
 
 Start the backend server:
@@ -39,7 +41,7 @@ Start the backend server:
 pnpm --filter backend dev
 ```
 
-The server will start on `http://localhost:3001`.
+The server will start on `http://127.0.0.1:3210`.
 
 ### Testing
 
@@ -89,10 +91,10 @@ pnpm --filter backend test
 
 # Start dev server
 pnpm --filter backend dev
-# Expected: Server listening on http://0.0.0.0:3001
+# Expected: Server listening on http://127.0.0.1:3210
 
 # Test health endpoint (in another terminal)
-curl http://localhost:3001/health
+curl http://127.0.0.1:3210/health
 # Expected: {"status":"ok","timestamp":"..."}
 ```
 

@@ -24,25 +24,18 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <nav className="flex gap-4">
               <Link
-                to="/"
+                to="/data"
                 className="text-sm text-quack-dark text-opacity-70 hover:text-opacity-100"
                 activeProps={{ className: 'text-quack-orange font-semibold' }}
               >
-                Home
+                Data
               </Link>
               <Link
-                to="/explorer"
+                to="/notebooks"
                 className="text-sm text-quack-dark text-opacity-70 hover:text-opacity-100"
                 activeProps={{ className: 'text-quack-orange font-semibold' }}
               >
-                Explorer
-              </Link>
-              <Link
-                to="/workspace"
-                className="text-sm text-quack-dark text-opacity-70 hover:text-opacity-100"
-                activeProps={{ className: 'text-quack-orange font-semibold' }}
-              >
-                Workspace
+                Notebooks
               </Link>
             </nav>
           </div>

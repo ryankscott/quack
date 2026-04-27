@@ -28,13 +28,23 @@ function getTargetTriple() {
   try {
     return execSync('rustc --print host-tuple', { encoding: 'utf8' }).trim();
   } catch {
-    // Fallback for older Rust versions
-    const rustInfo = execSync('rustc -vV', { encoding: 'utf8' });
-    const match = /host: (\S+)/g.exec(rustInfo);
-    if (match) {
-      return match[1];
+    const fallbackTriples = {
+      'darwin-arm64': 'aarch64-apple-darwin',
+      'darwin-x64': 'x86_64-apple-darwin',
+      'linux-arm64': 'aarch64-unknown-linux-gnu',
+      'linux-x64': 'x86_64-unknown-linux-gnu',
+      'win32-arm64': 'aarch64-pc-windows-msvc',
+      'win32-x64': 'x86_64-pc-windows-msvc',
+    };
+    const fallbackKey = `${process.platform}-${process.arch}`;
+    const fallbackTriple = fallbackTriples[fallbackKey];
+
+    if (fallbackTriple) {
+      console.warn(`rustc not found; falling back to target triple ${fallbackTriple}`);
+      return fallbackTriple;
     }
-    throw new Error('Failed to determine platform target triple');
+
+    throw new Error(`Failed to determine platform target triple for ${fallbackKey}`);
   }
 }
 
@@ -73,7 +83,7 @@ async function main() {
 
   try {
     execSync(
-      `npx @yao-pkg/pkg dist/server.js --target node20 --output "${outputPath}"`,
+      `pnpm dlx @yao-pkg/pkg@5.12.0 dist/server.js --target node20 --output "${outputPath}"`,
       { cwd: backendDir, stdio: 'inherit' }
     );
   } finally {

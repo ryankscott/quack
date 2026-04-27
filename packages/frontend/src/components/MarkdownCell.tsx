@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import type { CellState } from '@/hooks/useCellManager';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { ChevronDown, ChevronUp, Eye, EyeOff, Trash2Icon } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from './ui/collapsible';
 import ReactMarkdown from 'react-markdown';
@@ -50,10 +51,14 @@ export const MarkdownCell = forwardRef<MarkdownCellRef, MarkdownCellProps>(funct
     <div ref={containerRef} className="bg-white border border-quack-dark border-opacity-10 rounded-lg shadow-sm mb-6">
       <div className="flex items-center justify-between p-2 border-b border-quack-dark border-opacity-10 bg-quack-gold bg-opacity-5">
         <div className="flex items-center gap-2">
-          <div className="flex gap-2 px-2 items-center">
-            <p className="text-xs text-quack-dark text-opacity-60 font-mono">
-              Cell {cellIndex + 1}
-            </p>
+          <div className="flex min-w-[220px] items-center gap-2 px-2">
+            <Input
+              value={cell.title}
+              onChange={(event) => onUpdate({ title: event.target.value })}
+              placeholder={`Markdown cell ${cellIndex + 1}`}
+              className="h-7 border-transparent bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-border focus-visible:ring-0"
+            />
+            <p className="text-xs text-quack-dark text-opacity-50">Markdown</p>
           </div>
         </div>
 

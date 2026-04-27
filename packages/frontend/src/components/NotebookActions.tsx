@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useExportNotebook,
@@ -9,12 +10,13 @@ import {
 import { generateMarkdownFromCells } from '@/lib/markdown-export';
 import { captureChartByCellId } from '@/lib/chart-capture';
 import type { CellState } from '@/hooks/useCellManager';
+import { Button } from './ui/button';
 
 interface NotebookActionsProps {
   notebookId: string | null;
   cells?: CellState[];
   notebookName?: string;
-  variant?: 'panel' | 'toolbar';
+  variant?: 'panel' | 'footer';
   className?: string;
 }
 
@@ -145,36 +147,39 @@ export function NotebookActions({
     }
   };
 
-  if (variant === 'toolbar') {
+  if (variant === 'footer') {
     return (
-      <div className={`flex items-center gap-2 ${className ?? ''}`.trim()}>
-        <label className="sr-only" htmlFor="export-format">
-          Export format
-        </label>
-        <select
-          id="export-format"
-          value={exportFormat}
-          onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
-          className="input-base text-sm w-32"
-          disabled={isExporting}
-        >
-          <option value="markdown">Markdown</option>
-          <option value="quackdb">.quackdb</option>
-        </select>
-        <button
-          onClick={handleExport}
-          disabled={isExporting || !notebookId}
-          className="btn-secondary text-sm"
-        >
-          {isExporting ? 'Exporting...' : 'Export'}
-        </button>
-        <button
-          onClick={handleImportClick}
-          disabled={isImporting}
-          className="btn-secondary text-sm"
-        >
-          {isImporting ? 'Importing...' : 'Import'}
-        </button>
+      <div
+        className={`border-t border-quack-dark border-opacity-10 bg-white p-3 ${className ?? ''}`.trim()}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs uppercase tracking-wide text-quack-dark text-opacity-60">
+            Notebook import and export
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="export-format">
+              Export format
+            </label>
+            <select
+              id="export-format"
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+              className="input-base h-8 w-36 py-0 text-sm"
+              disabled={isExporting}
+            >
+              <option value="markdown">Markdown</option>
+              <option value="quackdb">.quackdb</option>
+            </select>
+            <Button onClick={handleExport} disabled={isExporting || !notebookId} size="sm" variant="secondary">
+              <Download className="h-4 w-4" />
+              {isExporting ? 'Exporting...' : 'Export'}
+            </Button>
+            <Button onClick={handleImportClick} disabled={isImporting} size="sm" variant="outline">
+              <Upload className="h-4 w-4" />
+              {isImporting ? 'Importing...' : 'Import'}
+            </Button>
+          </div>
+        </div>
         <input
           ref={fileInputRef}
           type="file"

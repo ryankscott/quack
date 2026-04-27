@@ -2,11 +2,12 @@ import { useRef, forwardRef, useImperativeHandle } from 'react';
 import { SQLEditor, type SQLEditorRef } from './SQLEditor';
 import { TemplatePicker } from './TemplatePicker';
 import { Button } from './ui/button';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, PanelRightClose, PanelRightOpen, Wand2 } from 'lucide-react';
 import { CollapsibleContent } from './ui/collapsible';
 import { SchemaPanel } from './SchemaPanel';
 import type { SQLTemplate } from '@/lib/sql-templates';
 import type { TableColumn } from '@/hooks/useTableSchema';
+import { formatSql } from '@/lib/format-sql';
 
 export interface SQLCellEditorRef {
   focus: () => void;
@@ -20,9 +21,11 @@ interface SQLCellEditorProps {
   isSchemasLoading?: boolean;
   isExecuting: boolean;
   isCollapsed?: boolean;
+  isSchemaCollapsed?: boolean;
   onSqlChange: (sql: string) => void;
   onExecute: () => void;
   onToggleCollapse?: () => void;
+  onToggleSchema?: () => void;
 }
 
 /**
@@ -38,9 +41,11 @@ export const SQLCellEditor = forwardRef<SQLCellEditorRef, SQLCellEditorProps>(
       isSchemasLoading = false,
       isExecuting,
       isCollapsed,
+      isSchemaCollapsed = false,
       onSqlChange,
       onExecute,
       onToggleCollapse,
+      onToggleSchema,
     },
     ref
   ) {
@@ -67,6 +72,13 @@ export const SQLCellEditor = forwardRef<SQLCellEditorRef, SQLCellEditorProps>(
       editorRef.current?.focus();
     };
 
+    const handleFormatSql = () => {
+      const formatted = formatSql(sql);
+      if (!formatted) return;
+      onSqlChange(formatted);
+      setTimeout(() => editorRef.current?.focus(), 0);
+    };
+
     return (
       <>
         <div className="flex items-center justify-between mb-2">
@@ -75,6 +87,17 @@ export const SQLCellEditor = forwardRef<SQLCellEditorRef, SQLCellEditorProps>(
           </div>
           <div className="flex items-center gap-2">
             <TemplatePicker onSelect={handleTemplateSelect} />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={handleFormatSql}
+              disabled={!sql.trim()}
+              title="Format SQL"
+            >
+              <Wand2 size={14} />
+              <span className="ml-1 text-xs">Format SQL</span>
+            </Button>
             {onToggleCollapse && (
               <Button
                 variant="ghost"
@@ -115,12 +138,27 @@ export const SQLCellEditor = forwardRef<SQLCellEditorRef, SQLCellEditorProps>(
                 columnsByTable={columnsByTable}
               />
             </div>
-            <SchemaPanel
-              columnsByTable={columnsByTable || {}}
-              selectedTables={selectedTables}
-              isLoading={isSchemasLoading}
-              onColumnClick={handleColumnClick}
-            />
+            {onToggleSchema && (
+              <div className="flex shrink-0 items-start px-2 pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={onToggleSchema}
+                  title={isSchemaCollapsed ? 'Show schema' : 'Hide schema'}
+                >
+                  {isSchemaCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+                </Button>
+              </div>
+            )}
+            {!isSchemaCollapsed && (
+              <SchemaPanel
+                columnsByTable={columnsByTable || {}}
+                selectedTables={selectedTables}
+                isLoading={isSchemasLoading}
+                onColumnClick={handleColumnClick}
+              />
+            )}
           </div>
         </CollapsibleContent>
       </>

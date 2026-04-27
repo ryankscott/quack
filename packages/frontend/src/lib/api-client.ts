@@ -2,9 +2,23 @@
  * Centralized API client for consistent error handling and request/response management
  */
 
-const API_BASE_URL = '/api';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
+
+function isTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
+export function getApiBaseUrl(): string {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  return isTauriRuntime() ? 'http://127.0.0.1:3210' : '/api';
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export class ApiError extends Error {
   constructor(
@@ -21,6 +35,23 @@ interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean>;
 }
 
+export function buildApiUrl(
+  baseUrl: string,
+  path: string,
+  params?: Record<string, string | number | boolean>
+): string {
+  const fullPath = `${baseUrl}${path}`;
+  const url = new URL(fullPath, window.location.origin);
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, String(value));
+    });
+  }
+
+  return url.toString();
+}
+
 /**
  * Generic API client with consistent error handling
  */
@@ -35,16 +66,7 @@ class ApiClient {
    * Build URL with query parameters
    */
   private buildUrl(path: string, params?: Record<string, string | number | boolean>): string {
-    const fullPath = `${this.baseUrl}${path}`;
-    const url = new URL(fullPath, window.location.origin);
-
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, String(value));
-      });
-    }
-
-    return url.toString();
+    return buildApiUrl(this.baseUrl, path, params);
   }
 
   /**
@@ -216,6 +238,3 @@ class ApiClient {
 
 // Export singleton instance
 export const apiClient = new ApiClient();
-
-// Export type-safe API methods using generated types
-export { API_BASE_URL };

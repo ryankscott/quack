@@ -13,6 +13,7 @@ export interface NotebookCell {
   id: string;
   notebook_id: string;
   cell_index: number;
+  title: string | null;
   cell_type: string;
   sql_text: string | null;
   markdown_text: string | null;
@@ -25,6 +26,7 @@ export interface NotebookCellResponse {
   id: string;
   notebook_id: string;
   cell_index: number;
+  title: string | null;
   cell_type: string;
   sql_text: string | null;
   markdown_text: string | null;
@@ -41,6 +43,7 @@ export interface CreateNotebookRequest {
   name: string;
   markdown?: string;
   cells?: Array<{
+    title?: string;
     cell_type: string;
     sql_text?: string;
     markdown_text?: string;
@@ -53,6 +56,7 @@ export interface UpdateNotebookRequest {
   name?: string;
   markdown?: string;
   cells?: Array<{
+    title?: string;
     cell_type: string;
     sql_text?: string;
     markdown_text?: string;
@@ -133,11 +137,12 @@ export async function createNotebook(
         : null;
       await dbConnection.run(
         `INSERT INTO _notebook_cells 
-           (id, notebook_id, cell_index, cell_type, sql_text, markdown_text, chart_config, selected_tables)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, notebook_id, cell_index, title, cell_type, sql_text, markdown_text, chart_config, selected_tables)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         cellId,
         notebookId,
         i,
+        cell.title?.trim() || null,
         cell.cell_type,
         cell.sql_text || null,
         cell.markdown_text || null,
@@ -201,11 +206,12 @@ export async function updateNotebook(
         : null;
       await dbConnection.run(
         `INSERT INTO _notebook_cells 
-         (id, notebook_id, cell_index, cell_type, sql_text, markdown_text, chart_config, selected_tables)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, notebook_id, cell_index, title, cell_type, sql_text, markdown_text, chart_config, selected_tables)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         cellId,
         notebookId,
         i,
+        cell.title?.trim() || null,
         cell.cell_type,
         cell.sql_text || null,
         cell.markdown_text || null,
